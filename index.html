@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Air Writing Studio</title>
+
+  <!-- ✅ FIXED: Correct MediaPipe CDN URLs -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+  <style>
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap');
+
+    body {
+      background: #0a0a0f;
+      color: #e8e8f0;
+      font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 24px 16px 40px;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    header h1 {
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #00ecff 0%, #a259ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    header p.subtitle {
+      margin-top: 6px;
+      font-size: 0.9rem;
+      color: #666680;
+    }
+
+    /* ── Status badge ── */
+    #statusBadge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      background: #1a1a2e;
+      border: 1px solid #2a2a45;
+      margin-bottom: 16px;
+      transition: all 0.3s;
+    }
+    #statusBadge .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #666;
+      transition: background 0.3s;
+    }
+    #statusBadge.loading .dot { background: #f5a623; animation: pulse 1s infinite; }
+    #statusBadge.drawing .dot { background: #00ecff; animation: pulse 0.6s infinite; }
+    #statusBadge.ready   .dot { background: #2ecc71; }
+    #statusBadge.paused  .dot { background: #888; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ── Canvas wrapper ── */
+    .stage {
+      position: relative;
+      width: min(640px, 100%);
+      aspect-ratio: 4/3;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px #1e1e35, 0 20px 60px rgba(0,0,0,0.7);
+      background: #000;
+    }
+
+    #webcam, #paintCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      /* Mirror so hand movement feels natural */
+      transform: scaleX(-1);
+    }
+
+    #paintCanvas {
+      z-index: 10;
+      background: transparent;
+    }
+
+    /* Overlay shown before camera starts */
+    #cameraOverlay {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      background: #0d0d1a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      transition: opacity 0.5s;
+    }
+    #cameraOverlay.hidden { opacity: 0; pointer-events: none; }
+    #cameraOverlay svg { opacity: 0.4; }
+    #cameraOverlay p { color: #555; font-size: 0.9rem; }
+
+    /* ── Controls bar ── */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      margin-top: 20px;
+      width: min(640px, 100%);
+    }
+
+    /* Color swatches */
+    .color-picker {
+      display: flex;
+      gap: 8px;
+    }
+    .swatch {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .swatch:hover { transform: scale(1.15); }
+    .swatch.active { border-color: #fff; transform: scale(1.15); }
+
+    /* Brush size */
+    .brush-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: #666680;
+    }
+    #brushSize {
+      -webkit-appearance: none;
+      width: 80px;
+      height: 4px;
+      border-radius: 2px;
+      background: #2a2a45;
+      outline: none;
+      cursor: pointer;
+    }
+    #brushSize::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: #00ecff;
+      cursor: pointer;
+    }
+
+    /* Clear button */
+    #clearBtn {
+      background: #1e1e35;
+      color: #e8e8f0;
+      border: 1px solid #2a2a45;
+      padding: 8px 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    #clearBtn:hover { background: #2a2a45; border-color: #3a3a60; }
+    #clearBtn:active { transform: scale(0.96); }
+
+    /* Save button */
+    #saveBtn {
+      background: linear-gradient(135deg, #00ecff, #a259ff);
+      color: #000;
+      border: none;
+      padding: 8px 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    #saveBtn:hover { opacity: 0.85; }
+
+    /* ── Gesture hint ── */
+    .hint {
+      margin-top: 18px;
+      width: min(640px, 100%);
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .hint-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #12121f;
+      border: 1px solid #1e1e35;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.78rem;
+      color: #888;
+    }
+    .hint-chip span.icon { font-size: 1.1rem; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>✍️ Air Writing Studio</h1>
+    <p class="subtitle">Write in the air — your hand becomes the pen</p>
+  </header>
+
+  <div id="statusBadge" class="loading">
+    <span class="dot"></span>
+    <span id="statusText">Starting camera…</span>
+  </div>
+
+  <div class="stage">
+    <video id="webcam" autoplay playsinline muted></video>
+    <canvas id="paintCanvas"></canvas>
+
+    <div id="cameraOverlay">
+      <!-- Hand icon placeholder -->
+      <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="28" y="4" width="8" height="28" rx="4" fill="#fff"/>
+        <rect x="16" y="12" width="8" height="22" rx="4" fill="#fff"/>
+        <rect x="40" y="12" width="8" height="22" rx="4" fill="#fff"/>
+        <rect x="4"  y="22" width="8" height="18" rx="4" fill="#fff"/>
+        <rect x="12" y="34" width="40" height="16" rx="8" fill="#fff"/>
+      </svg>
+      <p>Waiting for camera access…</p>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="color-picker" id="colorPicker">
+      <div class="swatch active" style="background:#00ecff" data-color="#00ecff"></div>
+      <div class="swatch" style="background:#ff4757" data-color="#ff4757"></div>
+      <div class="swatch" style="background:#2ecc71" data-color="#2ecc71"></div>
+      <div class="swatch" style="background:#f5a623" data-color="#f5a623"></div>
+      <div class="swatch" style="background:#a259ff" data-color="#a259ff"></div>
+      <div class="swatch" style="background:#ffffff" data-color="#ffffff"></div>
+    </div>
+
+    <div class="brush-control">
+      <span>Brush</span>
+      <input type="range" id="brushSize" min="2" max="20" value="5" />
+      <span id="brushSizeLabel">5px</span>
+    </div>
+
+    <button id="clearBtn">🗑 Clear</button>
+    <button id="saveBtn">💾 Save</button>
+  </div>
+
+  <div class="hint">
+    <div class="hint-chip"><span class="icon">☝️</span> Index finger only = Draw</div>
+    <div class="hint-chip"><span class="icon">✋</span> Open hand = Pause / Lift pen</div>
+    <div class="hint-chip"><span class="icon">🌈</span> Pick a colour below</div>
+  </div>
+
+  <script>
+    // ── DOM refs ──────────────────────────────────────────────────────────────
+    const video       = document.getElementById('webcam');
+    const canvas      = document.getElementById('paintCanvas');
+    const ctx         = canvas.getContext('2d');
+    const clearBtn    = document.getElementById('clearBtn');
+    const saveBtn     = document.getElementById('saveBtn');
+    const brushSlider = document.getElementById('brushSize');
+    const brushLabel  = document.getElementById('brushSizeLabel');
+    const overlay     = document.getElementById('cameraOverlay');
+    const badge       = document.getElementById('statusBadge');
+    const statusText  = document.getElementById('statusText');
+
+    // ── State ─────────────────────────────────────────────────────────────────
+    let strokeColor = '#00ecff';
+    let strokeWidth = 5;
+    let lastX = null, lastY = null;
+
+    // ── Canvas size matches native resolution ─────────────────────────────────
+    canvas.width  = 640;
+    canvas.height = 480;
+
+    // ── Status helpers ────────────────────────────────────────────────────────
+    function setStatus(state, text) {
+      badge.className = state;
+      statusText.textContent = text;
+    }
+
+    // ── Color picker ──────────────────────────────────────────────────────────
+    document.getElementById('colorPicker').addEventListener('click', e => {
+      const sw = e.target.closest('.swatch');
+      if (!sw) return;
+      document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+      sw.classList.add('active');
+      strokeColor = sw.dataset.color;
+    });
+
+    // ── Brush slider ──────────────────────────────────────────────────────────
+    brushSlider.addEventListener('input', () => {
+      strokeWidth = +brushSlider.value;
+      brushLabel.textContent = strokeWidth + 'px';
+    });
+
+    // ── Clear & Save ──────────────────────────────────────────────────────────
+    clearBtn.addEventListener('click', () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
+
+    saveBtn.addEventListener('click', () => {
+      // Composite webcam frame + drawing onto a temp canvas for export
+      const tmp = document.createElement('canvas');
+      tmp.width  = canvas.width;
+      tmp.height = canvas.height;
+      const tc = tmp.getContext('2d');
+      tc.fillStyle = '#0a0a0f';
+      tc.fillRect(0, 0, tmp.width, tmp.height);
+      // Mirror for save too
+      tc.save();
+      tc.translate(tmp.width, 0);
+      tc.scale(-1, 1);
+      tc.drawImage(video, 0, 0, tmp.width, tmp.height);
+      tc.restore();
+      tc.drawImage(canvas, 0, 0);
+      const link = document.createElement('a');
+      link.download = 'air-writing.png';
+      link.href = tmp.toDataURL('image/png');
+      link.click();
+    });
+
+    // ── MediaPipe Results Handler ─────────────────────────────────────────────
+    function onResults(results) {
+      if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+        // No hand — lift pen
+        lastX = null; lastY = null;
+        setStatus('ready', 'Show your hand');
+        return;
+      }
+
+      const lm = results.multiHandLandmarks[0];
+
+      // Landmark indices:
+      //  4 = thumb tip,  8 = index tip,  6 = index pip
+      // 12 = middle tip, 10 = middle pip
+      // 16 = ring tip,   20 = pinky tip
+
+      const indexTip  = lm[8];
+      const indexPip  = lm[6];   // knuckle below tip
+      const middleTip = lm[12];
+      const middlePip = lm[10];
+      const ringTip   = lm[16];
+      const pinkyTip  = lm[20];
+
+      // Finger is "up" when tip.y < pip.y  (Y grows downward in MediaPipe)
+      const indexUp  = indexTip.y  < indexPip.y;
+      const middleUp = middleTip.y < middlePip.y;
+
+      // Draw only when index is up and middle is folded
+      const drawing = indexUp && !middleUp;
+
+      // ✅ FIXED: Mirror X coordinate to match the CSS scaleX(-1) transform
+      const x = (1 - indexTip.x) * canvas.width;
+      const y = indexTip.y * canvas.height;
+
+      if (drawing) {
+        setStatus('drawing', 'Drawing…');
+        if (lastX !== null && lastY !== null) {
+          ctx.beginPath();
+          ctx.strokeStyle = strokeColor;
+          ctx.lineWidth   = strokeWidth;
+          ctx.lineCap     = 'round';
+          ctx.lineJoin    = 'round';
+          ctx.moveTo(lastX, lastY);
+          ctx.lineTo(x, y);
+          ctx.stroke();
+        }
+        lastX = x;
+        lastY = y;
+      } else {
+        lastX = null; lastY = null;
+        setStatus('paused', indexUp ? 'Open hand → pen lifted' : 'Point index to draw');
+      }
+    }
+
+    // ── Init MediaPipe Hands ──────────────────────────────────────────────────
+    const hands = new Hands({
+      // ✅ FIXED: Correct locateFile URL using template literal properly
+      locateFile: (file) =>
+        `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    });
+
+    hands.setOptions({
+      maxNumHands: 1,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.7,
+      minTrackingConfidence: 0.7
+    });
+
+    hands.onResults(onResults);
+
+    // ── Start Camera ──────────────────────────────────────────────────────────
+    const camera = new Camera(video, {
+      onFrame: async () => {
+        await hands.send({ image: video });
+      },
+      width: 640,
+      height: 480
+    });
+
+    camera.start()
+      .then(() => {
+        overlay.classList.add('hidden');
+        setStatus('ready', 'Ready — show your hand!');
+      })
+      .catch(err => {
+        setStatus('loading', 'Camera blocked — allow access');
+        overlay.querySelector('p').textContent = '⚠️ Camera access denied. Please allow it in your browser.';
+        console.error('Camera error:', err);
+      });
+  </script>
+</body>
+</html>
