@@ -73,7 +73,11 @@
       box-shadow: 0 0 0 1px var(--border), 0 0 50px rgba(0,236,255,0.06), 0 24px 64px rgba(0,0,0,0.75); background: #000;
     }
     #webcam { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-    #paintCanvas, #glitterCanvas { position: absolute; inset: 0; width: 100%; height: 100%; transition: opacity 0.35s ease; }
+    
+    .stage.blackboard-active #webcam { opacity: 0.12; filter: grayscale(1) contrast(1.2); }
+    .stage.blackboard-active { background: #19251f; background-image: radial-gradient(#22342b 15%, transparent 16%), radial-gradient(#1e2f26 15%, transparent 16%); background-size: 60px 60px; background-position: 0 0, 30px 30px; }
+
+    #paintCanvas, #glitterCanvas { position: absolute; inset: 0; width: 100%; height: 100%; transform-origin: 0 0; transition: none !important; }
     #paintCanvas { z-index: 10; background: transparent; }
     #glitterCanvas { z-index: 11; pointer-events: none; }
 
@@ -170,10 +174,10 @@
     #eraserSize::-webkit-slider-thumb { background: #ff4757 !important; }
     #fontPicker { background: #0e0e1c; color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 3px 7px; font-size: 0.76rem; cursor: pointer; outline: none; }
 
-    /* ───── HUMAN WORKSPAN CONTROL BUTTON INTERFACE ───── */
+    /* ───── INTERFACE CONTROL BUTTONS ───── */
     .btn-row { 
       display: grid; 
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); 
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); 
       gap: 10px; 
       margin-top: 16px; 
       width: min(960px, 100%); 
@@ -187,7 +191,10 @@
     .pill:hover { background: #1c1c2b; border-color: #44445c; color: #ffffff; transform: translateY(-1px); }
     .pill:active { background: #11111a; transform: translateY(0); }
     
-    /* Subtle functional variations instead of high-contrast glowing artificial configurations */
+    .pill-board { border-color: #27523f; color: #a4e6c3; background: #0f241a; }
+    .pill-board:hover { border-color: #3f8566; background: #163627; color: #c6fce0; }
+    .pill-board.active-mode { background: #1e4d38; border-color: #55c292; color: #ffffff; box-shadow: inset 0 2px 4px rgba(0,0,0,0.4); }
+
     .pill-accent { border-color: #4b367c; color: #cbb3ff; background: #171324; }
     .pill-accent:hover { border-color: #7452c4; background: #201a33; color: #e5daff; }
     
@@ -226,7 +233,7 @@
   <span class="dot"></span><span id="statusText">Starting…</span>
 </div>
 
-<div class="stage">
+<div class="stage" id="appStage">
   <video id="webcam" autoplay playsinline muted></video>
   <canvas id="paintCanvas"></canvas>
   <canvas id="glitterCanvas"></canvas>
@@ -305,6 +312,7 @@
 </div>
 
 <div class="btn-row">
+  <button class="pill pill-board" id="blackboardToggleBtn">▤ blackboard off</button>
   <button class="pill" id="undoBtn">↩ undo</button>
   <button class="pill" id="redoBtn">↪ redo</button>
   <button class="pill" id="ocrBtn">⌕ read writing</button>
@@ -347,11 +355,35 @@ const statusTxt        = document.getElementById('statusText');
 const stickerDropdownBtn = document.getElementById('stickerDropdownBtn');
 const stickerMenu      = document.getElementById('stickerMenu');
 const activeStickerView = document.getElementById('activeStickerView');
+const appStage         = document.getElementById('appStage');
+const blackboardBtn    = document.getElementById('blackboardToggleBtn');
 
-canvas.width = glitterCvs.width = 640;
-canvas.height = glitterCvs.height = 480;
+// FIXED: Increased baseline internal resolution to 1280x960 to match 4:3 monitors and prevent premature clipping borders!
+canvas.width = glitterCvs.width = 1280;
+canvas.height = glitterCvs.height = 960;
 
-// ── INTRO TIMING (STRICT 3-SECONDS SHOWROOM) ──────────────────────────────────
+let isBlackboardMode = false;
+
+function flushCoordinates() {
+  lastX = null;
+  lastY = null;
+}
+
+blackboardBtn.addEventListener('click', () => {
+  flushCoordinates();
+  isBlackboardMode = !isBlackboardMode;
+  if(isBlackboardMode) {
+    appStage.classList.add('blackboard-active');
+    blackboardBtn.classList.add('active-mode');
+    blackboardBtn.textContent = "▩ blackboard on";
+  } else {
+    appStage.classList.remove('blackboard-active');
+    blackboardBtn.classList.remove('active-mode');
+    blackboardBtn.textContent = "▤ blackboard off";
+  }
+});
+
+// ── INTRO TIMING ──────────────────────────────────────────────────────────────
 setTimeout(() => {
   intro.classList.add('hide');
   setTimeout(() => { intro.style.display = 'none'; }, 550);
@@ -365,6 +397,12 @@ let initialZoomHandSize = null;
 let initialZoomScale = 1.0;
 let lastPanHandX = null;
 let lastPanHandY = null;
+
+function applyViewportTransform() {
+  const transformStr = `translate(${viewPanX}px, ${viewPanY}px) scale(${viewScale})`;
+  canvas.style.transform = transformStr;
+  glitterCvs.style.transform = transformStr;
+}
 
 // ── DRAWING STATE ─────────────────────────────────────────────────────────────
 let strokeColor = '#00ecff', brushMode = 'normal', strokeWidth = 5, eraserWidth = 30;
@@ -392,12 +430,20 @@ function saveSnap() {
   if (undoStack.length > 30) undoStack.shift();
 }
 document.getElementById('undoBtn').addEventListener('click', () => {
+  flushCoordinates();
   if (!undoStack.length) return;
   redoStack.push(ctx.getImageData(0,0,canvas.width,canvas.height));
   ctx.putImageData(undoStack.pop(), 0, 0);
 });
+document.getElementById('redoBtn').addEventListener('click', () => {
+  flushCoordinates();
+  if (!redoStack.length) return;
+  undoStack.push(ctx.getImageData(0,0,canvas.width,canvas.height));
+  ctx.putImageData(redoStack.pop(), 0, 0);
+});
 document.getElementById('clearBtn').addEventListener('click', () => {
   saveSnap(); 
+  flushCoordinates();
   ctx.clearRect(0,0,canvas.width,canvas.height); 
   gCtx.clearRect(0,0,glitterCvs.width,glitterCvs.height);
 });
@@ -417,6 +463,7 @@ function handleSelection(element) {
   }
   clearAllSelections();
   element.classList.add('active');
+  flushCoordinates(); 
   
   if (element.dataset.type === 'eraser') {
     isEraserMode = true;
@@ -450,8 +497,9 @@ document.querySelectorAll('.screen-swatch, .sticker-swatch').forEach(sw => {
 document.getElementById('brushSize').addEventListener('input', (e) => { strokeWidth = +e.target.value; document.getElementById('brushSizeLabel').textContent = strokeWidth+'px'; });
 document.getElementById('eraserSize').addEventListener('input', (e) => { eraserWidth = +e.target.value; document.getElementById('eraserSizeLabel').textContent = eraserWidth+'px'; });
 
-// ── FIXED READ WRITING (OCR FUNCTION) ─────────────────────────────────────────
+// ── READ WRITING (OCR FUNCTION) ─────────────────────────────────────────
 document.getElementById('ocrBtn').addEventListener('click', () => {
+  flushCoordinates();
   const ocrPanel = document.getElementById('ocrPanel');
   const ocrResult = document.getElementById('ocrResult');
   const ocrStatus = document.getElementById('ocrStatus');
@@ -489,6 +537,7 @@ document.getElementById('ocrBtn').addEventListener('click', () => {
 
 // ── AI ENGINE COMPLETION ──────────────────────────────────────────────────────
 document.getElementById('aiBtn').addEventListener('click', () => {
+  flushCoordinates();
   document.getElementById('aiPanel').classList.add('visible');
   const aiResult = document.getElementById('aiResult');
   const aiStatus = document.getElementById('aiStatus');
@@ -517,25 +566,38 @@ document.getElementById('aiBtn').addEventListener('click', () => {
   }, 800);
 });
 
-// ── INTERPOLATED COORDINATE CONVERTER ──────────────────────────────────────────
-function getTransformedCoords(screenX, screenY) {
-  const canvasX = (screenX - viewPanX) / viewScale;
-  const canvasY = (screenY - viewPanY) / viewScale;
-  return { x: canvasX, y: canvasY };
+// ── FIXED DYNAMIC COORDINATE INTERPOLATION ────────────────────────────────────
+function getTransformedCoords(normalizedTargetX, normalizedTargetY) {
+  // CRITICAL FIX: Base alignment maps onto live bounding rect scales rather than fixed 640 arbitrary pixel coordinates!
+  const rect = canvas.getBoundingClientRect();
+  
+  // 1. Calculate where the finger drops relative to the layout box bounds on screen
+  const layoutX = normalizedTargetX * rect.width;
+  const layoutY = normalizedTargetY * rect.height;
+  
+  // 2. Remove the viewport CSS translations offset
+  const untranslatedLayoutX = layoutX - viewPanX;
+  const untranslatedLayoutY = layoutY - viewPanY;
+  
+  // 3. Rescale down to underlying high-res coordinate dimensions
+  const internalX = (untranslatedLayoutX / rect.width) * canvas.width / viewScale;
+  const internalY = (untranslatedLayoutY / rect.height) * canvas.height / viewScale;
+  
+  return { x: internalX, y: internalY };
 }
 
 // ── MASTER DRAW ROUTINE ───────────────────────────────────────────────────────
-function drawStroke(screenX, screenY) {
-  const coords = getTransformedCoords(screenX, screenY);
+function drawStroke(normX, normY) {
+  const coords = getTransformedCoords(normX, normY);
   const x = coords.x;
   const y = coords.y;
 
   ctx.save();
   if (activeSticker && !isEraserMode) {
+    ctx.globalCompositeOperation = 'source-over';
     if (lastX === null) {
       ctx.fillStyle = "#ffffff";
-      // Render text relative to transformed point tracking space
-      ctx.font = `${(strokeWidth * 6) / viewScale}px sans-serif`;
+      ctx.font = `${(strokeWidth * 12) / viewScale}px sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(activeSticker, x, y);
@@ -547,13 +609,18 @@ function drawStroke(screenX, screenY) {
 
   if (isEraserMode) {
     ctx.globalCompositeOperation = 'destination-out';
-    ctx.lineWidth = eraserWidth / viewScale;
+    ctx.lineWidth = (eraserWidth * 2) / viewScale;
     ctx.strokeStyle = 'rgba(0,0,0,1)';
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     if (lastX !== null) { ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke(); }
   } else {
     ctx.globalCompositeOperation = 'source-over';
-    if (brushMode === 'rainbow') {
+    
+    if (isBlackboardMode) {
+      ctx.strokeStyle = 'rgba(245, 245, 240, 0.75)';
+      ctx.shadowColor = 'rgba(230, 230, 225, 0.3)';
+      ctx.shadowBlur = 6 / viewScale;
+    } else if (brushMode === 'rainbow') {
       ctx.strokeStyle = `hsl(${rainbowHue}, 100%, 50%)`;
       ctx.shadowColor = `hsl(${rainbowHue}, 100%, 50%)`;
       rainbowHue = (rainbowHue + 3) % 360; 
@@ -561,24 +628,36 @@ function drawStroke(screenX, screenY) {
       ctx.strokeStyle = strokeColor;
       ctx.shadowColor = strokeColor;
     }
-    ctx.lineWidth = (brushMode === 'glitter' ? Math.max(2, strokeWidth * 0.6) : strokeWidth) / viewScale;
-    ctx.shadowBlur = 12 / viewScale;
+    
+    ctx.lineWidth = ((brushMode === 'glitter' ? Math.max(2, strokeWidth * 0.6) : strokeWidth) * 2) / viewScale;
+    if (!isBlackboardMode) {
+      ctx.shadowBlur = 24 / viewScale;
+    }
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    
     if (lastX !== null) { 
       ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke(); 
-      if (brushMode === 'glitter') spawnGlitter(x, y, strokeColor);
+      
+      if (isBlackboardMode && Math.random() > 0.3) {
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.beginPath();
+        ctx.arc(x + (Math.random() - 0.5) * 16, y + (Math.random() - 0.5) * 16, Math.random() * 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      if (brushMode === 'glitter' && !isBlackboardMode) spawnGlitter(x, y, strokeColor);
     }
   }
   ctx.restore();
   lastX = x; lastY = y;
 }
 
-// ── SMOOTH HOVER HAND SELECTION ──────────────────────────────────────────────
-function processUniversalAirHover(x, y) {
+// ── AIR HOVER SELECTION ──────────────────────────────────────────────────────
+function processUniversalAirHover(normX, normY) {
   const stageEl = document.querySelector('.stage');
   const rect = stageEl.getBoundingClientRect();
-  const cssX = (x / canvas.width) * rect.width;
-  const cssY = (y / canvas.height) * rect.height;
+  const cssX = normX * rect.width;
+  const cssY = normY * rect.height;
 
   let foundItem = null;
   const targets = document.querySelectorAll('.screen-swatch, .sticker-swatch, #stickerDropdownBtn');
@@ -613,7 +692,7 @@ function clearHoverRings() { document.querySelectorAll('.screen-swatch .hover-ri
 // ── GLITTER PARTICLE FLUID ENGINE ─────────────────────────────────────────────
 function spawnGlitter(x, y, color) {
   for (let i=0; i<5; i++) {
-    particles.push({ x, y, vx:(Math.random()-0.5)*4, vy:(Math.random()-0.5)*4, alpha:1, size:Math.random()*3+1.5, color, decay:0.03 });
+    particles.push({ x, y, vx:(Math.random()-0.5)*8, vy:(Math.random()-0.5)*8, alpha:1, size:Math.random()*6+3, color, decay:0.03 });
   }
 }
 (function animateGlitter() {
@@ -626,18 +705,16 @@ function spawnGlitter(x, y, color) {
   requestAnimationFrame(animateGlitter);
 })();
 
-// ── MEDIAPIPE GESTURE & VISION TRACKER ────────────────────────────────────────
+// ── MEDIAPIPE TRACKING AND COORDS PIPELINE ───────────────────────────────────
 function onResults(results) {
   if (!results.multiHandLandmarks || !results.multiHandLandmarks.length) {
     if (isActionActive) { saveSnap(); isActionActive=false; }
-    lastX=null; lastY=null; clearHoverRings(); 
+    flushCoordinates(); clearHoverRings(); 
     initialZoomHandSize = null; lastPanHandX = null; lastPanHandY = null;
     setStatus('ready','show your hand'); return;
   }
   
   const lm = results.multiHandLandmarks[0];
-  
-  // FIXED POINT DEFINITION: tracking tip of index finger (point 8) exactly.
   const thumbTip = lm[4], indexTip = lm[8], indexPip = lm[6], middleTip = lm[12], ringTip = lm[16], pinkyTip = lm[20];
   
   const thumbExtended = Math.abs(thumbTip.x - indexPip.x) > 0.11;
@@ -646,9 +723,26 @@ function onResults(results) {
   const ringUp         = ringTip.y   < lm[14].y;
   const pinkyUp        = pinkyTip.y  < lm[18].y;
 
-  // ───── GESTURE 1: ZOOM MODE (ALL 5 FINGERS EXTENDED) ─────
+  const vWidth = video.videoWidth || 640;
+  const vHeight = video.videoHeight || 480;
+  const videoAspect = vWidth / vHeight;
+  const stageRect = canvas.getBoundingClientRect();
+  const canvasAspect = stageRect.width / stageRect.height;
+
+  let scaleX = 1, scaleY = 1;
+  let offsetX = 0, offsetY = 0;
+
+  if (videoAspect > canvasAspect) {
+    scaleX = videoAspect / canvasAspect;
+    offsetX = (scaleX - 1) / 2;
+  } else {
+    scaleY = canvasAspect / videoAspect;
+    offsetY = (scaleY - 1) / 2;
+  }
+
+  // ───── GESTURE 1: ZOOM MODE (5 Fingers) ─────
   if (thumbExtended && indexUp && middleUp && ringUp && pinkyUp) {
-    lastX = null; lastY = null; lastPanHandX = null; lastPanHandY = null;
+    flushCoordinates(); lastPanHandX = null; lastPanHandY = null;
     setStatus('paused', 'Zoom Mode (5 Fingers)');
     
     const dx = thumbTip.x - pinkyTip.x;
@@ -661,58 +755,62 @@ function onResults(results) {
     } else {
       const scaleFactor = currentHandSize / initialZoomHandSize;
       viewScale = Math.min(Math.max(0.4, initialZoomScale * scaleFactor), 4.0);
-      
-      canvas.style.transform = `translate(${viewPanX}px, ${viewPanY}px) scale(${viewScale})`;
-      glitterCvs.style.transform = `translate(${viewPanX}px, ${viewPanY}px) scale(${viewScale})`;
+      applyViewportTransform();
     }
     return;
   } else {
     initialZoomHandSize = null;
   }
 
-  // ───── GESTURE 2: MOVE / PAN MODE (EXACTLY 2 FINGERS EXTENDED) ─────
+  // ───── GESTURE 2: MOVE / PAN MODE (2 Fingers) ─────
   if (indexUp && middleUp && !ringUp && !pinkyUp && !thumbExtended) {
-    lastX = null; lastY = null;
+    flushCoordinates();
     setStatus('paused', 'Pan / Move Mode (2 Fingers)');
     
-    const currentPanX = ((1 - indexTip.x) + (1 - middleTip.x)) * 0.5 * canvas.width;
-    const currentPanY = (indexTip.y + middleTip.y) * 0.5 * canvas.height;
+    const normIdxX = (indexTip.x * scaleX) - offsetX;
+    const normMidX = (middleTip.x * scaleX) - offsetX;
+    const normIdxY = (indexTip.y * scaleY) - offsetY;
+    const normMidY = (middleTip.y * scaleY) - offsetY;
+
+    const currentPanX = ((1 - normIdxX) + (1 - normMidX)) * 0.5 * stageRect.width;
+    const currentPanY = (normIdxY + normMidY) * 0.5 * stageRect.height;
 
     if (lastPanHandX !== null) {
-      const deltaX = currentPanX - lastPanHandX;
-      const deltaY = currentPanY - lastPanHandY;
-      
-      viewPanX += deltaX;
-      viewPanY += deltaY;
-
-      canvas.style.transform = `translate(${viewPanX}px, ${viewPanY}px) scale(${viewScale})`;
-      glitterCvs.style.transform = `translate(${viewPanX}px, ${viewPanY}px) scale(${viewScale})`;
+      viewPanX += (currentPanX - lastPanHandX);
+      viewPanY += (currentPanY - lastPanHandY);
+      applyViewportTransform();
     }
     lastPanHandX = currentPanX;
     lastPanHandY = currentPanY;
     return;
   } else {
-    lastPanHandX = null;
+    lastPanHandX = null; 
     lastPanHandY = null;
   }
 
-  // ───── GESTURE 3: WRITE / DRAW MODE (INDEX UP ONLY) ─────
+  // ───── GESTURE 3: WRITE / DRAW / STAMP MODE (1 Finger) ─────
   if (indexUp && !middleUp && !ringUp && !pinkyUp && !thumbExtended) {
     clearHoverRings();
     if (!isActionActive) { saveSnap(); isActionActive = true; }
-    setStatus('drawing', isEraserMode ? 'Erasing...' : 'Drawing...');
-    // Absolute 1:1 scaling mapped straight to indexTip array positions
-    drawStroke((1 - indexTip.x) * canvas.width, indexTip.y * canvas.height);
+    setStatus('drawing', isEraserMode ? 'Erasing...' : (activeSticker ? 'Placing Sticker...' : 'Drawing...'));
+    
+    const correctedX = (indexTip.x * scaleX) - offsetX;
+    const correctedY = (indexTip.y * scaleY) - offsetY;
+    
+    // Pass raw normalized container percentages down to our internal tracking routine
+    drawStroke(1 - correctedX, correctedY);
     return;
   } else {
     if (isActionActive) { saveSnap(); isActionActive = false; }
-    lastX = null; lastY = null;
+    flushCoordinates();
   }
 
-  // ───── GESTURE 4: NAVIGATION HOVER MODE (THUMB OUT ALONE) ─────
+  // ───── GESTURE 4: NAVIGATION HOVER MODE (Thumb Out Only) ─────
   if (thumbExtended && !indexUp && !middleUp && !ringUp && !pinkyUp) {
     setStatus('paused', 'Air Menu Hover Active');
-    processUniversalAirHover((1 - thumbTip.x) * canvas.width, thumbTip.y * canvas.height);
+    const correctedThumbX = (thumbTip.x * scaleX) - offsetX;
+    const correctedThumbY = (thumbTip.y * scaleY) - offsetY;
+    processUniversalAirHover(1 - correctedThumbX, correctedThumbY);
   } else {
     clearHoverRings();
     setStatus('ready', 'Airclout Navigation Mode');
@@ -726,16 +824,16 @@ hands.onResults(onResults);
 const camera = new Camera(video, { onFrame: async () => { await hands.send({ image: video }); }, width: 640, height: 480 });
 camera.start().then(() => { overlay.classList.add('hidden'); setStatus('ready','ready!'); });
 
-// Save canvas locally
 document.getElementById('saveBtn').addEventListener('click', () => {
+  flushCoordinates();
   const link = document.createElement('a');
-  link.download = 'airclout-canvas.png';
+  link.download = isBlackboardMode ? 'airclout-blackboard.png' : 'airclout-canvas.png';
   link.href = canvas.toDataURL();
   link.click();
 });
 
-// Share to WhatsApp
 document.getElementById('whatsappBtn').addEventListener('click', () => {
+  flushCoordinates();
   const textMsg = encodeURIComponent("Check out my artwork drawn using Airclout! 🎨✨");
   window.open(`https://api.whatsapp.com/send?text=${textMsg}`, '_blank');
 });
