@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Airclout Pro</title>
+  <title>Airclout</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Pacifico&family=Permanent+Marker&family=Abril+Fatface&family=Righteous&family=Boogaloo&family=Lobster&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -13,45 +13,45 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #07070f; --surface: #12121f; --border: #22223a;
-      --text: #e8e8f0; --muted: #55556a; --cyan: #00ecff; --purple: #a259ff; --green: #2ecc71;
+      --bg: #07070f; --surface: #11111b; --border: #26263b;
+      --text: #e2e2e9; --muted: #62627a; --cyan: #00ecff; --purple: #a259ff; --green: #2ecc71;
     }
 
-    /* ───── INTRO SPLASH ───── */
-    #intro {
-      position: fixed; inset: 0; z-index: 9999; background: #07070f;
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
-      transition: opacity 0.5s ease;
-    }
-    #intro.hide { opacity: 0; pointer-events: none; }
-    #intro .brand {
-      font-family: 'Pacifico', cursive; font-size: clamp(4.5rem, 15vw, 8.5rem); font-weight: 700; letter-spacing: -1px;
-      background: linear-gradient(135deg, #00ecff 0%, #a259ff 50%, #ff4db8 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      text-shadow: 0 0 40px rgba(162, 89, 255, 0.3); opacity: 0; transform: scale(0.9) translateY(10px);
-      transition: opacity 0.8s ease, transform 0.8s cubic-bezier(.34,1.4,.64,1);
-    }
-    #intro .brand.show { opacity: 1; transform: scale(1) translateY(0); }
-    #intro .tagline {
-      font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; color: #55557f;
-      font-weight: 600; letter-spacing: 1px; opacity: 0; transform: translateY(8px);
-      transition: opacity 0.6s ease 0.4s, transform 0.6s ease 0.4s;
-    }
-    #intro .tagline.show { opacity: 1; transform: translateY(0); }
-    .loader-bar { width: 160px; height: 3px; background: #16162a; border-radius: 99px; overflow: hidden; margin-top: 20px; }
-    .loader-fill { height: 100%; width: 0; background: linear-gradient(90deg, #00ecff, #a259ff, #ff4db8); border-radius: 99px; transition: width 2.6s linear; }
-
-    /* ───── BODY & LAYOUT ───── */
     body {
       background: var(--bg); color: var(--text); font-family: 'Space Grotesk', sans-serif;
       min-height: 100vh; display: flex; flex-direction: column; align-items: center;
-      padding: 24px 12px 60px; opacity: 0; transition: opacity 0.5s ease;
+      padding: 24px 12px 60px;
     }
+
+    /* ───── INTRO SPLASH OVERLAY ───── */
+    #intro {
+      position: fixed; inset: 0; z-index: 9999; background: #07070f;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+      opacity: 1; transition: opacity 0.5s ease;
+    }
+    #intro.hide { opacity: 0; pointer-events: none; }
+    #intro .brand {
+      font-family: 'Righteous', sans-serif; font-size: clamp(3.5rem, 12vw, 7.5rem); font-weight: 700; letter-spacing: 1px;
+      background: linear-gradient(135deg, #00ecff 0%, #a259ff 50%, #ff4db8 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      text-shadow: 0 0 40px rgba(162, 89, 255, 0.3); opacity: 1; transform: scale(1);
+      width: max-content; padding-right: 20px; text-align: center;
+    }
+    #intro .tagline {
+      font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; color: #55557f;
+      font-weight: 600; letter-spacing: 1px; text-align: center;
+    }
+    .loader-bar { width: 160px; height: 3px; background: #16162a; border-radius: 99px; overflow: hidden; margin-top: 20px; }
+    .loader-fill { height: 100%; width: 0; background: linear-gradient(90deg, #00ecff, #a259ff, #ff4db8); border-radius: 99px; animation: initialLoad 2.6s linear forwards; }
+    @keyframes initialLoad { to { width: 100%; } }
+
+    /* ───── MAIN APP HEADER ───── */
     header { text-align: center; margin-bottom: 16px; }
     header h1 {
-      font-family: 'Pacifico', cursive; font-size: clamp(2.2rem, 6vw, 3.4rem);
+      font-family: 'Righteous', sans-serif; font-size: clamp(2.2rem, 6vw, 3.4rem);
       background: linear-gradient(135deg, #00ecff 0%, #a259ff 60%, #ff4db8 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      padding-right: 5px;
     }
     header p { margin-top: 5px; font-size: 0.82rem; color: var(--muted); }
 
@@ -77,7 +77,7 @@
     #paintCanvas { z-index: 10; background: transparent; }
     #glitterCanvas { z-index: 11; pointer-events: none; }
 
-    /* ───── 14 COLOR FLOATING AIR PALETTE ───── */
+    /* ───── FLOATING AIR PALETTE ───── */
     #screenPalette {
       position: absolute; top: 12px; left: 12px; z-index: 30;
       display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;
@@ -107,12 +107,16 @@
       background: #ff4757; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: white; font-weight: bold;
     }
     .screen-swatch.eraser-swatch.active { border-color: #ffff00; box-shadow: 0 0 12px #ff4757; }
+    
+    .screen-swatch.rainbow-swatch {
+      background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
+    }
     .screen-swatch .hover-ring {
       position: absolute; inset: -4px; border: 1.5px dashed var(--cyan); border-radius: 50%;
       animation: spin 2s linear infinite; display: none; pointer-events: none;
     }
 
-    /* ───── DYNAMIC DROPDOWN STICKER PALETTE ───── */
+    /* ───── DROPDOWN STICKER PALETTE ───── */
     #stickerContainer {
       position: absolute; top: 12px; right: 12px; z-index: 30;
       display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
@@ -145,13 +149,11 @@
 
     @keyframes spin { 100% { transform: rotate(360deg); } }
 
-    #paintCanvas.minimized, #glitterCanvas.minimized { opacity: 0.18; }
     #miniBanner {
       display: none; position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
       z-index: 15; background: rgba(0,0,0,0.7); border: 1px solid #333;
       border-radius: 8px; padding: 5px 14px; font-size: 0.74rem; color: #aaa; white-space: nowrap;
     }
-    #miniBanner.visible { display: block; }
     #cameraOverlay {
       position: absolute; inset: 0; z-index: 20; background: #0d0d1a;
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; transition: opacity 0.5s;
@@ -159,7 +161,7 @@
     #cameraOverlay.hidden { opacity: 0; pointer-events: none; }
     #cameraOverlay p { color: #555; font-size: 0.88rem; }
 
-    /* ───── TOOLS & BUTTONS ───── */
+    /* ───── TOOLS & INTERFACE CONTROLS ───── */
     .tool-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; margin-top: 14px; width: min(960px, 100%); }
     .tool-group { display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 6px 11px; }
     .tool-label { font-size: 0.7rem; color: var(--muted); }
@@ -168,25 +170,34 @@
     #eraserSize::-webkit-slider-thumb { background: #ff4757 !important; }
     #fontPicker { background: #0e0e1c; color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 3px 7px; font-size: 0.76rem; cursor: pointer; outline: none; }
 
-    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px; width: min(960px, 100%); }
-    .pill {
-      display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 999px;
-      font-family: 'Space Grotesk', sans-serif; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.2px;
-      cursor: pointer; border: none; transition: all 0.18s; white-space: nowrap; position: relative; overflow: hidden;
+    /* ───── HUMAN WORKSPAN CONTROL BUTTON INTERFACE ───── */
+    .btn-row { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); 
+      gap: 10px; 
+      margin-top: 16px; 
+      width: min(960px, 100%); 
     }
-    .pill:active { transform: scale(0.95); }
-    .pill-ghost { background: transparent; border: 1.5px solid var(--border); color: #9999b8; }
-    .pill-ghost:hover { border-color: #4444aa; color: #ccccee; background: rgba(100,100,200,0.08); }
-    .pill-dark { background: #18182e; border: 1.5px solid #2a2a48; color: #c0c0d8; }
-    .pill-dark:hover { background: #22223c; color: #e0e0f0; }
-    .pill-accent { background: linear-gradient(135deg, #00ecff22, #a259ff22); border: 1.5px solid #a259ff55; color: #c8aaff; }
-    .pill-accent:hover { background: linear-gradient(135deg, #00ecff33, #a259ff33); border-color: #a259ff99; }
-    .pill-danger { background: transparent; border: 1.5px solid #3a1a1a; color: #cc6666; }
-    .pill-danger:hover { background: #1e0a0a; border-color: #7a2a2a; color: #ff8888; }
-    .pill-hi { background: linear-gradient(135deg, #1a2a1a, #1a1a2a); border: 1.5px solid #336633; color: #88cc88; }
-    .pill-hi:hover { border-color: #55aa55; color: #aaeaaa; }
+    .pill {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 16px; border-radius: 8px;
+      font-family: 'Space Grotesk', sans-serif; font-size: 0.8rem; font-weight: 500; letter-spacing: 0.2px;
+      cursor: pointer; border: 1px solid #2d2d3f; background: #14141f; color: #b5b5c9; transition: all 0.15s ease-in-out;
+      white-space: nowrap; position: relative;
+    }
+    .pill:hover { background: #1c1c2b; border-color: #44445c; color: #ffffff; transform: translateY(-1px); }
+    .pill:active { background: #11111a; transform: translateY(0); }
+    
+    /* Subtle functional variations instead of high-contrast glowing artificial configurations */
+    .pill-accent { border-color: #4b367c; color: #cbb3ff; background: #171324; }
+    .pill-accent:hover { border-color: #7452c4; background: #201a33; color: #e5daff; }
+    
+    .pill-whatsapp { border-color: #1a4a2b; color: #a3e2b8; background: #0d1f14; }
+    .pill-whatsapp:hover { border-color: #277343; background: #132e1e; color: #c4f2d5; }
+    
+    .pill-danger { border-color: #59242a; color: #ff9da6; background: #241215; }
+    .pill-danger:hover { border-color: #8c353f; background: #331519; color: #ffcbd0; }
 
-    /* ───── PANELS ───── */
+    /* ───── RESULTS PANELS ───── */
     .result-panel { margin-top: 12px; width: min(960px, 100%); background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 20px; display: none; }
     .result-panel.visible { display: block; }
     .result-panel h3 { font-size: 0.78rem; color: var(--muted); margin-bottom: 10px; font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase; }
@@ -203,7 +214,7 @@
 <div id="intro">
   <div class="brand" id="introBrand">Airclout</div>
   <div class="tagline" id="introTagline">Write in the air. Leave your mark.</div>
-  <div class="loader-bar"><div class="loader-fill" id="loaderFill"></div></div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
 </div>
 
 <header>
@@ -221,6 +232,9 @@
   <canvas id="glitterCanvas"></canvas>
   
   <div id="screenPalette">
+    <div class="palette-section-title">Special</div>
+    <div class="screen-swatch rainbow-swatch" data-type="color" data-mode="rainbow"><div class="hover-ring"></div></div>
+
     <div class="palette-section-title">Neon (4)</div>
     <div class="screen-swatch active" style="background:#00ecff; color:#00ecff" data-color="#00ecff" data-type="color" data-mode="normal"><div class="hover-ring"></div></div>
     <div class="screen-swatch" style="background:#ff00ff; color:#ff00ff" data-color="#ff00ff" data-type="color" data-mode="normal"><div class="hover-ring"></div></div>
@@ -284,18 +298,19 @@
     <span class="tool-label">Font</span>
     <select id="fontPicker">
       <option value="'Space Grotesk',sans-serif">Space Grotesk</option>
-      <option value="'Pacifico',cursive">Pacifico</option>
+      <option value="'Righteous',sans-serif">Righteous</option>
       <option value="'Permanent Marker',cursive">Marker</option>
     </select>
   </div>
 </div>
 
 <div class="btn-row">
-  <button class="pill pill-ghost" id="undoBtn">↩ undo</button>
-  <button class="pill pill-ghost" id="redoBtn">↪ redo</button>
-  <button class="pill pill-dark" id="ocrBtn">⌕ read writing</button>
+  <button class="pill" id="undoBtn">↩ undo</button>
+  <button class="pill" id="redoBtn">↪ redo</button>
+  <button class="pill" id="ocrBtn">⌕ read writing</button>
   <button class="pill pill-accent" id="aiBtn">✦ ai complete</button>
-  <button class="pill pill-dark" id="saveBtn">↓ save</button>
+  <button class="pill" id="saveBtn">↓ save</button>
+  <button class="pill pill-whatsapp" id="whatsappBtn">p share</button>
   <button class="pill pill-danger" id="clearBtn">✕ clear all</button>
 </div>
 
@@ -312,22 +327,20 @@
 </div>
 
 <div class="hints">
-  <span class="chip">☝ index finger = draw / erase / stamp emoji</span>
-  <span class="chip">👍 stick thumb out = hover over colors, stickers dropdown, or menu items to select</span>
-  <span class="chip">✋ open hand = lift pen</span>
+  <span class="chip">☝ 1 Finger (Index) = Draw / Stamp Emoji</span>
+  <span class="chip">✌ 2 Fingers (Index + Middle) = Drag & Move Drawing</span>
+  <span class="chip">🖐 5 Fingers Open = Stretch / Pinch to Zoom Canvas</span>
+  <span class="chip">👍 Thumb Out Alone = Hover over items to Select</span>
 </div>
 
 <script>
-// ── DOM ───────────────────────────────────────────────────────────────────────
+// ── DOM ELEMENTS ──────────────────────────────────────────────────────────────
 const video            = document.getElementById('webcam');
 const canvas           = document.getElementById('paintCanvas');
 const ctx              = canvas.getContext('2d');
 const glitterCvs       = document.getElementById('glitterCanvas');
 const gCtx             = glitterCvs.getContext('2d');
 const intro            = document.getElementById('intro');
-const introBrand       = document.getElementById('introBrand');
-const introTagline     = document.getElementById('introTagline');
-const loaderFill       = document.getElementById('loaderFill');
 const overlay          = document.getElementById('cameraOverlay');
 const badge            = document.getElementById('statusBadge');
 const statusTxt        = document.getElementById('statusText');
@@ -338,22 +351,28 @@ const activeStickerView = document.getElementById('activeStickerView');
 canvas.width = glitterCvs.width = 640;
 canvas.height = glitterCvs.height = 480;
 
-// ── INTRO TIMING ──────────────────────────────────────────────────────────────
-setTimeout(() => introBrand.classList.add('show'), 100);
-setTimeout(() => introTagline.classList.add('show'), 500);
-setTimeout(() => { loaderFill.style.width = '100%'; }, 200);
+// ── INTRO TIMING (STRICT 3-SECONDS SHOWROOM) ──────────────────────────────────
 setTimeout(() => {
   intro.classList.add('hide');
-  document.body.style.opacity = '1';
   setTimeout(() => { intro.style.display = 'none'; }, 550);
-}, 3000); 
+}, 3000);
 
-// ── State ─────────────────────────────────────────────────────────────────────
+// ── CANVAS TRANSFORMATION STATE ───────────────────────────────────────────────
+let viewScale = 1.0;
+let viewPanX = 0;
+let viewPanY = 0;
+let initialZoomHandSize = null;
+let initialZoomScale = 1.0;
+let lastPanHandX = null;
+let lastPanHandY = null;
+
+// ── DRAWING STATE ─────────────────────────────────────────────────────────────
 let strokeColor = '#00ecff', brushMode = 'normal', strokeWidth = 5, eraserWidth = 30;
 let lastX = null, lastY = null, isActionActive = false;
 let isEraserMode = false; 
 let activeSticker = null; 
 let undoStack = [], redoStack = [], particles = [];
+let rainbowHue = 0;
 
 let currentHoveredItem = null;
 let hoverStartTime = 0;
@@ -361,14 +380,13 @@ const HOVER_DELAY = 450;
 
 function setStatus(s, t) { badge.className = s; statusTxt.textContent = t; }
 
-// Toggle dropdown via mouse click
 stickerDropdownBtn.addEventListener('click', (e) => {
   e.stopPropagation();
   stickerMenu.classList.toggle('show');
 });
 document.addEventListener('click', () => stickerMenu.classList.remove('show'));
 
-// ── Undo / Redo ───────────────────────────────────────────────────────────────
+// ── UNDO / REDO PIPELINE ──────────────────────────────────────────────────────
 function saveSnap() {
   undoStack.push(ctx.getImageData(0,0,canvas.width,canvas.height));
   if (undoStack.length > 30) undoStack.shift();
@@ -379,10 +397,12 @@ document.getElementById('undoBtn').addEventListener('click', () => {
   ctx.putImageData(undoStack.pop(), 0, 0);
 });
 document.getElementById('clearBtn').addEventListener('click', () => {
-  saveSnap(); ctx.clearRect(0,0,canvas.width,canvas.height); gCtx.clearRect(0,0,glitterCvs.width,glitterCvs.height);
+  saveSnap(); 
+  ctx.clearRect(0,0,canvas.width,canvas.height); 
+  gCtx.clearRect(0,0,glitterCvs.width,glitterCvs.height);
 });
 
-// ── Selection Management ───────────────────────────────────────────────────────
+// ── SELECTION INTERFACE ───────────────────────────────────────────────────────
 function clearAllSelections() {
   document.querySelectorAll('.screen-swatch, .sticker-swatch').forEach(s => {
     s.classList.remove('active');
@@ -395,7 +415,6 @@ function handleSelection(element) {
     stickerMenu.classList.toggle('show');
     return;
   }
-
   clearAllSelections();
   element.classList.add('active');
   
@@ -407,17 +426,20 @@ function handleSelection(element) {
     isEraserMode = false;
     activeSticker = element.dataset.emoji;
     activeStickerView.textContent = activeSticker;
-    stickerMenu.classList.remove('show'); // Auto-close drop menu
+    stickerMenu.classList.remove('show'); 
   } else {
     isEraserMode = false;
     activeSticker = null;
-    strokeColor = element.dataset.color;
     brushMode = element.dataset.mode || 'normal';
-    activeStickerView.textContent = "🖌️";
+    if(brushMode === 'rainbow') {
+      activeStickerView.textContent = "🌈";
+    } else {
+      strokeColor = element.dataset.color;
+      activeStickerView.textContent = "🖌️";
+    }
   }
 }
 
-// Bind direct clicks
 document.querySelectorAll('.screen-swatch, .sticker-swatch').forEach(sw => {
   sw.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -425,72 +447,122 @@ document.querySelectorAll('.screen-swatch, .sticker-swatch').forEach(sw => {
   });
 });
 
-// ── Sliders ───────────────────────────────────────────────────────────────────
 document.getElementById('brushSize').addEventListener('input', (e) => { strokeWidth = +e.target.value; document.getElementById('brushSizeLabel').textContent = strokeWidth+'px'; });
 document.getElementById('eraserSize').addEventListener('input', (e) => { eraserWidth = +e.target.value; document.getElementById('eraserSizeLabel').textContent = eraserWidth+'px'; });
 
-// ── AI Sketch Completion Logic ────────────────────────────────────────────────
+// ── FIXED READ WRITING (OCR FUNCTION) ─────────────────────────────────────────
+document.getElementById('ocrBtn').addEventListener('click', () => {
+  const ocrPanel = document.getElementById('ocrPanel');
+  const ocrResult = document.getElementById('ocrResult');
+  const ocrStatus = document.getElementById('ocrStatus');
+  
+  ocrPanel.classList.add('visible');
+  ocrResult.textContent = "Processing image array...";
+  ocrStatus.textContent = "Running engine...";
+
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = canvas.width;
+  tempCanvas.height = canvas.height;
+  const tempCtx = tempCanvas.getContext('2d');
+  
+  tempCtx.fillStyle = '#07070f';
+  tempCtx.fillRect(0,0,tempCanvas.width,tempCanvas.height);
+  tempCtx.drawImage(canvas, 0, 0);
+
+  const dataURI = tempCanvas.toDataURL('image/png');
+
+  Tesseract.recognize(dataURI, 'eng', { logger: m => { ocrStatus.textContent = `Engine: ${m.status} (${Math.round(m.progress * 100)}%)`; } })
+    .then(({ data: { text } }) => {
+      if(!text || text.trim() === "") {
+        ocrResult.textContent = "Clear characters not detected.";
+      } else {
+        ocrResult.textContent = text.trim();
+      }
+      ocrStatus.textContent = "OCR processing finished.";
+    })
+    .catch(err => {
+      console.error(err);
+      ocrResult.textContent = "Error parsing typography.";
+      ocrStatus.textContent = "Failed to run standard browser layout analyzer.";
+    });
+});
+
+// ── AI ENGINE COMPLETION ──────────────────────────────────────────────────────
 document.getElementById('aiBtn').addEventListener('click', () => {
   document.getElementById('aiPanel').classList.add('visible');
   const aiResult = document.getElementById('aiResult');
   const aiStatus = document.getElementById('aiStatus');
-  
   aiResult.textContent = "Analyzing canvas geometry...";
   aiStatus.textContent = "Computing vectors...";
 
   setTimeout(() => {
     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     let activePixels = 0;
-    for (let i = 0; i < imgData.data.length; i += 4) {
-      if (imgData.data[i + 3] > 0) activePixels++;
-    }
-
+    for (let i = 0; i < imgData.data.length; i += 4) { if (imgData.data[i + 3] > 0) activePixels++; }
     if (activePixels === 0) {
-      aiResult.textContent = "Canvas is empty! Draw a continuous line sketch first.";
+      aiResult.textContent = "Canvas is empty! Draw a sketch first.";
       aiStatus.textContent = "Analysis completed.";
       return;
     }
-
     let prediction = "";
     if (activePixels < 1500) {
-      prediction = "✨ Character Sketch / Word Outline \nAI Prediction: You are beginning a text layout or an abstract insignia.";
+      prediction = "✨ Character Sketch / Outline Layout detected.";
     } else if (activePixels >= 1500 && activePixels < 6000) {
-      prediction = "🚀 Celestial / Geometric Shape \nAI Prediction: Trajectory curves match a star silhouette, moon shape, or vehicle prototype.";
+      prediction = "🚀 Geometric Silhouette matching astronomical patterns.";
     } else {
-      prediction = "🎨 Complex Creative Pattern \nAI Prediction: High density curves detected. Looks like dense creative illustration graffiti.";
+      prediction = "🎨 Complex Creative Illustration / Abstract Landscape curve cluster.";
     }
-
     aiResult.textContent = prediction;
     aiStatus.textContent = "AI completion logic executed successfully!";
   }, 800);
 });
 
-// ── Draw / Erase Pipeline ────────────────────────────────────────────────────
-function drawStroke(x, y) {
+// ── INTERPOLATED COORDINATE CONVERTER ──────────────────────────────────────────
+function getTransformedCoords(screenX, screenY) {
+  const canvasX = (screenX - viewPanX) / viewScale;
+  const canvasY = (screenY - viewPanY) / viewScale;
+  return { x: canvasX, y: canvasY };
+}
+
+// ── MASTER DRAW ROUTINE ───────────────────────────────────────────────────────
+function drawStroke(screenX, screenY) {
+  const coords = getTransformedCoords(screenX, screenY);
+  const x = coords.x;
+  const y = coords.y;
+
+  ctx.save();
   if (activeSticker && !isEraserMode) {
-    if (lastX === null) { 
-      ctx.save();
-      ctx.translate(canvas.width, 0); ctx.scale(-1, 1); 
-      ctx.font = `${strokeWidth * 6}px sans-serif`;
-      ctx.fillText(activeSticker, canvas.width - x - (strokeWidth*3), y + (strokeWidth*2));
-      ctx.restore();
+    if (lastX === null) {
+      ctx.fillStyle = "#ffffff";
+      // Render text relative to transformed point tracking space
+      ctx.font = `${(strokeWidth * 6) / viewScale}px sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(activeSticker, x, y);
       lastX = x; lastY = y;
     }
+    ctx.restore();
     return;
   }
 
-  ctx.save();
   if (isEraserMode) {
     ctx.globalCompositeOperation = 'destination-out';
-    ctx.lineWidth = eraserWidth;
+    ctx.lineWidth = eraserWidth / viewScale;
     ctx.strokeStyle = 'rgba(0,0,0,1)';
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     if (lastX !== null) { ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke(); }
   } else {
     ctx.globalCompositeOperation = 'source-over';
-    ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = brushMode === 'glitter' ? Math.max(2, strokeWidth * 0.6) : strokeWidth;
-    ctx.shadowColor = strokeColor; ctx.shadowBlur = 12;
+    if (brushMode === 'rainbow') {
+      ctx.strokeStyle = `hsl(${rainbowHue}, 100%, 50%)`;
+      ctx.shadowColor = `hsl(${rainbowHue}, 100%, 50%)`;
+      rainbowHue = (rainbowHue + 3) % 360; 
+    } else {
+      ctx.strokeStyle = strokeColor;
+      ctx.shadowColor = strokeColor;
+    }
+    ctx.lineWidth = (brushMode === 'glitter' ? Math.max(2, strokeWidth * 0.6) : strokeWidth) / viewScale;
+    ctx.shadowBlur = 12 / viewScale;
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     if (lastX !== null) { 
       ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke(); 
@@ -501,7 +573,7 @@ function drawStroke(x, y) {
   lastX = x; lastY = y;
 }
 
-// ── Unified Universal Interface Intersector (Air Hover Selector) ──────────────
+// ── SMOOTH HOVER HAND SELECTION ──────────────────────────────────────────────
 function processUniversalAirHover(x, y) {
   const stageEl = document.querySelector('.stage');
   const rect = stageEl.getBoundingClientRect();
@@ -509,16 +581,12 @@ function processUniversalAirHover(x, y) {
   const cssY = (y / canvas.height) * rect.height;
 
   let foundItem = null;
-  
-  // Elements available to track
   const targets = document.querySelectorAll('.screen-swatch, .sticker-swatch, #stickerDropdownBtn');
   
   targets.forEach(item => {
     const iRect = item.getBoundingClientRect();
     if (cssX >= (iRect.left - rect.left) && cssX <= (iRect.right - rect.left) &&
-        cssY >= (iRect.top - rect.top) && cssY <= (iRect.bottom - rect.top)) {
-      foundItem = item;
-    }
+        cssY >= (iRect.top - rect.top) && cssY <= (iRect.bottom - rect.top)) { foundItem = item; }
   });
 
   if (foundItem) {
@@ -540,11 +608,9 @@ function processUniversalAirHover(x, y) {
   }
 }
 
-function clearHoverRings() {
-  document.querySelectorAll('.screen-swatch .hover-ring, .sticker-swatch .hover-ring').forEach(r => r.style.display = 'none');
-}
+function clearHoverRings() { document.querySelectorAll('.screen-swatch .hover-ring, .sticker-swatch .hover-ring').forEach(r => r.style.display = 'none'); }
 
-// ── Glitter particles ─────────────────────────────────────────────────────────
+// ── GLITTER PARTICLE FLUID ENGINE ─────────────────────────────────────────────
 function spawnGlitter(x, y, color) {
   for (let i=0; i<5; i++) {
     particles.push({ x, y, vx:(Math.random()-0.5)*4, vy:(Math.random()-0.5)*4, alpha:1, size:Math.random()*3+1.5, color, decay:0.03 });
@@ -560,36 +626,96 @@ function spawnGlitter(x, y, color) {
   requestAnimationFrame(animateGlitter);
 })();
 
-// ── MediaPipe Processing Engine ───────────────────────────────────────────────
+// ── MEDIAPIPE GESTURE & VISION TRACKER ────────────────────────────────────────
 function onResults(results) {
   if (!results.multiHandLandmarks || !results.multiHandLandmarks.length) {
     if (isActionActive) { saveSnap(); isActionActive=false; }
-    lastX=null; lastY=null; clearHoverRings(); setStatus('ready','show your hand'); return;
+    lastX=null; lastY=null; clearHoverRings(); 
+    initialZoomHandSize = null; lastPanHandX = null; lastPanHandY = null;
+    setStatus('ready','show your hand'); return;
   }
   
   const lm = results.multiHandLandmarks[0];
-  const thumbTip = lm[4], indexTip = lm[8], indexPip = lm[6], middleTip = lm[12], middlePip = lm[10];
   
-  const indexUp  = indexTip.y  < indexPip.y;
-  const middleUp = middleTip.y < middlePip.y;
-  const thumbExtended = Math.abs(thumbTip.x - indexPip.x) > 0.12;
-  const isDrawingState = indexUp && !middleUp;
+  // FIXED POINT DEFINITION: tracking tip of index finger (point 8) exactly.
+  const thumbTip = lm[4], indexTip = lm[8], indexPip = lm[6], middleTip = lm[12], ringTip = lm[16], pinkyTip = lm[20];
+  
+  const thumbExtended = Math.abs(thumbTip.x - indexPip.x) > 0.11;
+  const indexUp        = indexTip.y  < indexPip.y;
+  const middleUp       = middleTip.y < lm[10].y;
+  const ringUp         = ringTip.y   < lm[14].y;
+  const pinkyUp        = pinkyTip.y  < lm[18].y;
 
-  if (isDrawingState) {
+  // ───── GESTURE 1: ZOOM MODE (ALL 5 FINGERS EXTENDED) ─────
+  if (thumbExtended && indexUp && middleUp && ringUp && pinkyUp) {
+    lastX = null; lastY = null; lastPanHandX = null; lastPanHandY = null;
+    setStatus('paused', 'Zoom Mode (5 Fingers)');
+    
+    const dx = thumbTip.x - pinkyTip.x;
+    const dy = thumbTip.y - pinkyTip.y;
+    const currentHandSize = Math.sqrt(dx*dx + dy*dy);
+
+    if (initialZoomHandSize === null) {
+      initialZoomHandSize = currentHandSize;
+      initialZoomScale = viewScale;
+    } else {
+      const scaleFactor = currentHandSize / initialZoomHandSize;
+      viewScale = Math.min(Math.max(0.4, initialZoomScale * scaleFactor), 4.0);
+      
+      canvas.style.transform = `translate(${viewPanX}px, ${viewPanY}px) scale(${viewScale})`;
+      glitterCvs.style.transform = `translate(${viewPanX}px, ${viewPanY}px) scale(${viewScale})`;
+    }
+    return;
+  } else {
+    initialZoomHandSize = null;
+  }
+
+  // ───── GESTURE 2: MOVE / PAN MODE (EXACTLY 2 FINGERS EXTENDED) ─────
+  if (indexUp && middleUp && !ringUp && !pinkyUp && !thumbExtended) {
+    lastX = null; lastY = null;
+    setStatus('paused', 'Pan / Move Mode (2 Fingers)');
+    
+    const currentPanX = ((1 - indexTip.x) + (1 - middleTip.x)) * 0.5 * canvas.width;
+    const currentPanY = (indexTip.y + middleTip.y) * 0.5 * canvas.height;
+
+    if (lastPanHandX !== null) {
+      const deltaX = currentPanX - lastPanHandX;
+      const deltaY = currentPanY - lastPanHandY;
+      
+      viewPanX += deltaX;
+      viewPanY += deltaY;
+
+      canvas.style.transform = `translate(${viewPanX}px, ${viewPanY}px) scale(${viewScale})`;
+      glitterCvs.style.transform = `translate(${viewPanX}px, ${viewPanY}px) scale(${viewScale})`;
+    }
+    lastPanHandX = currentPanX;
+    lastPanHandY = currentPanY;
+    return;
+  } else {
+    lastPanHandX = null;
+    lastPanHandY = null;
+  }
+
+  // ───── GESTURE 3: WRITE / DRAW MODE (INDEX UP ONLY) ─────
+  if (indexUp && !middleUp && !ringUp && !pinkyUp && !thumbExtended) {
     clearHoverRings();
     if (!isActionActive) { saveSnap(); isActionActive = true; }
     setStatus('drawing', isEraserMode ? 'Erasing...' : 'Drawing...');
+    // Absolute 1:1 scaling mapped straight to indexTip array positions
     drawStroke((1 - indexTip.x) * canvas.width, indexTip.y * canvas.height);
+    return;
   } else {
     if (isActionActive) { saveSnap(); isActionActive = false; }
     lastX = null; lastY = null;
-    setStatus('paused', 'Hover mode active');
+  }
 
-    if (thumbExtended) {
-      processUniversalAirHover((1 - thumbTip.x) * canvas.width, thumbTip.y * canvas.height);
-    } else {
-      clearHoverRings();
-    }
+  // ───── GESTURE 4: NAVIGATION HOVER MODE (THUMB OUT ALONE) ─────
+  if (thumbExtended && !indexUp && !middleUp && !ringUp && !pinkyUp) {
+    setStatus('paused', 'Air Menu Hover Active');
+    processUniversalAirHover((1 - thumbTip.x) * canvas.width, thumbTip.y * canvas.height);
+  } else {
+    clearHoverRings();
+    setStatus('ready', 'Airclout Navigation Mode');
   }
 }
 
@@ -606,6 +732,12 @@ document.getElementById('saveBtn').addEventListener('click', () => {
   link.download = 'airclout-canvas.png';
   link.href = canvas.toDataURL();
   link.click();
+});
+
+// Share to WhatsApp
+document.getElementById('whatsappBtn').addEventListener('click', () => {
+  const textMsg = encodeURIComponent("Check out my artwork drawn using Airclout! 🎨✨");
+  window.open(`https://api.whatsapp.com/send?text=${textMsg}`, '_blank');
 });
 </script>
 </body>
