@@ -206,6 +206,7 @@
 
     .pill-accent { border-color: #4b367c; color: #cbb3ff; background: #171324; }
     .pill-accent:hover { border-color: #7452c4; background: #201a33; color: #e5daff; }
+    .pill-accent.active-mode { background: #3b2462; border-color: #a259ff; color: #ffffff; box-shadow: inset 0 2px 4px rgba(0,0,0,0.4); }
     
     .pill-whatsapp { border-color: #1a4a2b; color: #a3e2b8; background: #0d1f14; }
     .pill-whatsapp:hover { border-color: #277343; background: #132e1e; color: #c4f2d5; }
@@ -322,6 +323,7 @@
 
 <div class="btn-row">
   <button class="pill pill-board" id="blackboardToggleBtn">▤ blackboard off</button>
+  <button class="pill pill-accent" id="fillModeToggleBtn">🪣 fill mode off</button>
   <button class="pill" id="undoBtn">↩ undo</button>
   <button class="pill" id="redoBtn">↪ redo</button>
   <button class="pill" id="ocrBtn">⌕ read writing</button>
@@ -349,6 +351,8 @@
   <span class="chip">🖐 Open Palm = Draw Mode (confirms color & exits selection)</span>
   <span class="chip">✊ Make a Fist = Enter Color Selection Mode</span>
   <span class="chip">☝ (while Fist Mode) Point with Index = Hover/Choose Color</span>
+  <span class="chip">🪣 Fill Mode ON = picking a color floods the canvas instead of drawing</span>
+  <span class="chip">🖍 Blackboard chalk now uses your picked color, chalk-styled</span>
 </div>
 
 <script>
@@ -367,6 +371,7 @@ const stickerMenu      = document.getElementById('stickerMenu');
 const activeStickerView = document.getElementById('activeStickerView');
 const appStage         = document.getElementById('appStage');
 const blackboardBtn    = document.getElementById('blackboardToggleBtn');
+const fillModeBtn       = document.getElementById('fillModeToggleBtn');
 const screenPaletteEl  = document.getElementById('screenPalette');
 
 // FIXED: Increased baseline internal resolution to 1280x960 to match 4:3 monitors and prevent premature clipping borders!
@@ -374,6 +379,7 @@ canvas.width = glitterCvs.width = 1280;
 canvas.height = glitterCvs.height = 960;
 
 let isBlackboardMode = false;
+let fillModeActive = false; // false = draw with picked color, true = flood-fill canvas with picked color
 
 function flushCoordinates() {
   lastX = null;
@@ -393,6 +399,27 @@ blackboardBtn.addEventListener('click', () => {
     blackboardBtn.textContent = "▤ blackboard off";
   }
 });
+
+fillModeBtn.addEventListener('click', () => {
+  fillModeActive = !fillModeActive;
+  if (fillModeActive) {
+    fillModeBtn.classList.add('active-mode');
+    fillModeBtn.textContent = "🪣 fill mode on";
+  } else {
+    fillModeBtn.classList.remove('active-mode');
+    fillModeBtn.textContent = "🪣 fill mode off";
+  }
+});
+
+// Floods the whole canvas with a color, keeping existing artwork drawn on top (undoable).
+function fillCanvasWithColor(color) {
+  saveSnap();
+  ctx.save();
+  ctx.globalCompositeOperation = 'destination-over';
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.restore();
+}
 
 // ── INTRO TIMING ──────────────────────────────────────────────────────────────
 setTimeout(() => {
@@ -494,9 +521,13 @@ function handleSelection(element) {
     brushMode = element.dataset.mode || 'normal';
     if(brushMode === 'rainbow') {
       activeStickerView.textContent = "🌈";
+      // Fill mode doesn't apply to rainbow (no single flat color to flood with).
     } else {
       strokeColor = element.dataset.color;
       activeStickerView.textContent = "🖌️";
+      if (fillModeActive) {
+        fillCanvasWithColor(strokeColor);
+      }
     }
   }
 }
@@ -600,6 +631,21 @@ function getTransformedCoords(normalizedTargetX, normalizedTargetY) {
   return { x: internalX, y: internalY };
 }
 
+// ── CHALK COLOR HELPER ────────────────────────────────────────────────────────
+// Blends a hex color toward white/pastel and returns it as an rgba string,
+// so picked palette colors still read as chalk on the blackboard instead of neon.
+function chalkTint(hex, alpha) {
+  if (!hex || hex[0] !== '#' || hex.length < 7) hex = '#f5f5f0';
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7),16);
+  const mix = 0.4; // how far to blend toward white for a chalky pastel look
+  const cr = Math.round(r + (255 - r) * mix);
+  const cg = Math.round(g + (255 - g) * mix);
+  const cb = Math.round(b + (255 - b) * mix);
+  return `rgba(${cr}, ${cg}, ${cb}, ${alpha})`;
+}
+
 // ── MASTER DRAW ROUTINE ───────────────────────────────────────────────────────
 function drawStroke(normX, normY) {
   const coords = getTransformedCoords(normX, normY);
@@ -630,10 +676,15 @@ function drawStroke(normX, normY) {
   } else {
     ctx.globalCompositeOperation = 'source-over';
     
+    let chalkColor = null;
     if (isBlackboardMode) {
-      ctx.strokeStyle = 'rgba(245, 245, 240, 0.75)';
-      ctx.shadowColor = 'rgba(230, 230, 225, 0.3)';
-      ctx.shadowBlur = 6 / viewScale;
+      chalkColor = (brushMode === 'rainbow')
+        ? `hsl(${rainbowHue}, 65%, 78%)`
+        : chalkTint(strokeColor, 0.85);
+      ctx.strokeStyle = chalkColor;
+      ctx.shadowColor = chalkColor;
+      ctx.shadowBlur = 3 / viewScale; // chalk barely glows, unlike neon brushes
+      if (brushMode === 'rainbow') rainbowHue = (rainbowHue + 3) % 360;
     } else if (brushMode === 'rainbow') {
       ctx.strokeStyle = `hsl(${rainbowHue}, 100%, 50%)`;
       ctx.shadowColor = `hsl(${rainbowHue}, 100%, 50%)`;
@@ -653,7 +704,7 @@ function drawStroke(normX, normY) {
       ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke(); 
       
       if (isBlackboardMode && Math.random() > 0.3) {
-        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.fillStyle = chalkTint(brushMode === 'rainbow' ? '#ffffff' : strokeColor, 0.45);
         ctx.beginPath();
         ctx.arc(x + (Math.random() - 0.5) * 16, y + (Math.random() - 0.5) * 16, Math.random() * 3, 0, Math.PI * 2);
         ctx.fill();
