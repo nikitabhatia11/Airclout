@@ -71,6 +71,10 @@
     .stage {
       position: relative; width: min(960px, 100%); aspect-ratio: 4/3; border-radius: 18px; overflow: hidden;
       box-shadow: 0 0 0 1px var(--border), 0 0 50px rgba(0,236,255,0.06), 0 24px 64px rgba(0,0,0,0.75); background: #000;
+      transition: box-shadow 0.25s ease;
+    }
+    .stage.color-select-active {
+      box-shadow: 0 0 0 2px var(--purple), 0 0 60px rgba(162,89,255,0.25), 0 24px 64px rgba(0,0,0,0.75);
     }
     #webcam { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
     
@@ -88,6 +92,11 @@
       background: rgba(7, 7, 15, 0.88); backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.08); padding: 8px; border-radius: 14px;
       max-height: calc(100% - 24px); overflow-y: auto;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+    #screenPalette.selecting {
+      border-color: var(--purple);
+      box-shadow: 0 0 0 2px rgba(162,89,255,0.55), 0 0 22px rgba(162,89,255,0.35);
     }
     #screenPalette::-webkit-scrollbar { width: 4px; }
     #screenPalette::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 4px; }
@@ -337,8 +346,9 @@
 <div class="hints">
   <span class="chip">☝ 1 Finger (Index) = Draw / Stamp Emoji</span>
   <span class="chip">✌ 2 Fingers (Index + Middle) = Drag & Move Drawing</span>
-  <span class="chip">🖐 5 Fingers Open = Stretch / Pinch to Zoom Canvas</span>
-  <span class="chip">👍 Thumb Out Alone = Hover over items to Select</span>
+  <span class="chip">🖐 Open Palm = Draw Mode (confirms color & exits selection)</span>
+  <span class="chip">✊ Make a Fist = Enter Color Selection Mode</span>
+  <span class="chip">☝ (while Fist Mode) Point with Index = Hover/Choose Color</span>
 </div>
 
 <script>
@@ -357,6 +367,7 @@ const stickerMenu      = document.getElementById('stickerMenu');
 const activeStickerView = document.getElementById('activeStickerView');
 const appStage         = document.getElementById('appStage');
 const blackboardBtn    = document.getElementById('blackboardToggleBtn');
+const screenPaletteEl  = document.getElementById('screenPalette');
 
 // FIXED: Increased baseline internal resolution to 1280x960 to match 4:3 monitors and prevent premature clipping borders!
 canvas.width = glitterCvs.width = 1280;
@@ -391,17 +402,11 @@ setTimeout(() => {
 
 // ── CANVAS TRANSFORMATION STATE ───────────────────────────────────────────────
 let viewScale = 1.0;
-let viewPanX = 0;
-let viewPanY = 0;
-let initialZoomHandSize = null;
-let initialZoomScale = 1.0;
 let lastPanHandX = null;
 let lastPanHandY = null;
 
 function applyViewportTransform() {
-  const transformStr = `translate(${viewPanX}px, ${viewPanY}px) scale(${viewScale})`;
-  canvas.style.transform = transformStr;
-  glitterCvs.style.transform = transformStr;
+  // disabled
 }
 
 // ── DRAWING STATE ─────────────────────────────────────────────────────────────
@@ -411,6 +416,15 @@ let isEraserMode = false;
 let activeSticker = null; 
 let undoStack = [], redoStack = [], particles = [];
 let rainbowHue = 0;
+
+// Fist → Color Selection Mode, Open Palm → back to Draw Mode (see onResults)
+let colorSelectionMode = false;
+
+function setColorSelectionMode(on) {
+  colorSelectionMode = on;
+  screenPaletteEl.classList.toggle('selecting', on);
+  appStage.classList.toggle('color-select-active', on);
+}
 
 let currentHoveredItem = null;
 let hoverStartTime = 0;
@@ -576,12 +590,12 @@ function getTransformedCoords(normalizedTargetX, normalizedTargetY) {
   const layoutY = normalizedTargetY * rect.height;
   
   // 2. Remove the viewport CSS translations offset
-  const untranslatedLayoutX = layoutX - viewPanX;
-  const untranslatedLayoutY = layoutY - viewPanY;
+  const untranslatedLayoutX = layoutX;
+  const untranslatedLayoutY = layoutY;
   
   // 3. Rescale down to underlying high-res coordinate dimensions
-  const internalX = (untranslatedLayoutX / rect.width) * canvas.width / viewScale;
-  const internalY = (untranslatedLayoutY / rect.height) * canvas.height / viewScale;
+  const internalX = (untranslatedLayoutX / rect.width) * canvas.width;
+  const internalY = (untranslatedLayoutY / rect.height) * canvas.height;
   
   return { x: internalX, y: internalY };
 }
@@ -705,13 +719,42 @@ function spawnGlitter(x, y, color) {
   requestAnimationFrame(animateGlitter);
 })();
 
+function moveCanvas(dx, dy) {
+  const image = ctx.getImageData(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  ctx.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  ctx.putImageData(
+    image,
+    dx,
+    dy
+  );
+}
+
 // ── MEDIAPIPE TRACKING AND COORDS PIPELINE ───────────────────────────────────
+// Gesture model:
+//   ✊ Fist (no fingers up, thumb tucked)        → enters Color Selection Mode
+//   ☝ Index only, while in Color Selection Mode  → hover/select a color or sticker
+//   🖐 Open palm (all 5 fingers extended)         → exits Color Selection Mode, back to Draw Mode
+//   ☝ Index only, in normal Draw Mode             → draws / stamps sticker
+//   ✌ Index + Middle, in normal Draw Mode         → pans/moves the drawing
 function onResults(results) {
   if (!results.multiHandLandmarks || !results.multiHandLandmarks.length) {
     if (isActionActive) { saveSnap(); isActionActive=false; }
     flushCoordinates(); clearHoverRings(); 
-    initialZoomHandSize = null; lastPanHandX = null; lastPanHandY = null;
-    setStatus('ready','show your hand'); return;
+    lastPanHandX = null; lastPanHandY = null;
+    setStatus('ready', colorSelectionMode ? 'show your hand (color mode)' : 'show your hand');
+    return;
   }
   
   const lm = results.multiHandLandmarks[0];
@@ -740,55 +783,73 @@ function onResults(results) {
     offsetY = (scaleY - 1) / 2;
   }
 
-  // ───── GESTURE 1: ZOOM MODE (5 Fingers) ─────
-  if (thumbExtended && indexUp && middleUp && ringUp && pinkyUp) {
-    flushCoordinates(); lastPanHandX = null; lastPanHandY = null;
-    setStatus('paused', 'Zoom Mode (5 Fingers)');
-    
-    const dx = thumbTip.x - pinkyTip.x;
-    const dy = thumbTip.y - pinkyTip.y;
-    const currentHandSize = Math.sqrt(dx*dx + dy*dy);
+  const isFist     = !indexUp && !middleUp && !ringUp && !pinkyUp && !thumbExtended;
+  const isOpenPalm = indexUp && middleUp && ringUp && pinkyUp && thumbExtended;
 
-    if (initialZoomHandSize === null) {
-      initialZoomHandSize = currentHandSize;
-      initialZoomScale = viewScale;
-    } else {
-      const scaleFactor = currentHandSize / initialZoomHandSize;
-      viewScale = Math.min(Math.max(0.4, initialZoomScale * scaleFactor), 4.0);
-      applyViewportTransform();
-    }
+  // ───── GESTURE A: FIST → ENTER COLOR SELECTION MODE ─────
+  if (isFist) {
+    if (isActionActive) { saveSnap(); isActionActive = false; }
+    flushCoordinates();
+    lastPanHandX = null; lastPanHandY = null;
+    clearHoverRings();
+    if (!colorSelectionMode) setColorSelectionMode(true);
+    setStatus('paused', '✊ Fist — Color Selection Mode');
     return;
-  } else {
-    initialZoomHandSize = null;
   }
 
-  // ───── GESTURE 2: MOVE / PAN MODE (2 Fingers) ─────
+  // ───── GESTURE B: OPEN PALM → CONFIRM & EXIT COLOR SELECTION ─────
+  if (isOpenPalm) {
+    flushCoordinates();
+    lastPanHandX = null; lastPanHandY = null;
+    clearHoverRings();
+    if (colorSelectionMode) {
+      setColorSelectionMode(false);
+      setStatus('ready', '🖐 Palm open — drawing with selected color');
+    } else {
+      setStatus('ready', '🖐 Palm open — draw mode ready');
+    }
+    return;
+  }
+
+  // ───── WHILE IN COLOR SELECTION MODE: POINT WITH INDEX TO HOVER/CHOOSE ─────
+  if (colorSelectionMode) {
+    flushCoordinates();
+    lastPanHandX = null; lastPanHandY = null;
+    if (indexUp && !middleUp && !ringUp && !pinkyUp) {
+      setStatus('paused', '☝ Selecting color…');
+      const correctedX = (indexTip.x * scaleX) - offsetX;
+      const correctedY = (indexTip.y * scaleY) - offsetY;
+      processUniversalAirHover(1 - correctedX, correctedY);
+    } else {
+      clearHoverRings();
+      setStatus('paused', '✊ Color Selection Mode — point to choose');
+    }
+    return;
+  }
+
+  // ───── GESTURE C: 2 FINGERS (INDEX + MIDDLE) → MOVE DRAWING ─────
   if (indexUp && middleUp && !ringUp && !pinkyUp && !thumbExtended) {
     flushCoordinates();
-    setStatus('paused', 'Pan / Move Mode (2 Fingers)');
-    
-    const normIdxX = (indexTip.x * scaleX) - offsetX;
-    const normMidX = (middleTip.x * scaleX) - offsetX;
-    const normIdxY = (indexTip.y * scaleY) - offsetY;
-    const normMidY = (middleTip.y * scaleY) - offsetY;
+    setStatus('paused', 'Moving Drawing');
 
-    const currentPanX = ((1 - normIdxX) + (1 - normMidX)) * 0.5 * stageRect.width;
-    const currentPanY = (normIdxY + normMidY) * 0.5 * stageRect.height;
+    const currentX = indexTip.x * canvas.width;
+    const currentY = indexTip.y * canvas.height;
 
     if (lastPanHandX !== null) {
-      viewPanX += (currentPanX - lastPanHandX);
-      viewPanY += (currentPanY - lastPanHandY);
-      applyViewportTransform();
+      const dx = currentX - lastPanHandX;
+      const dy = currentY - lastPanHandY;
+      moveCanvas(dx, dy);
     }
-    lastPanHandX = currentPanX;
-    lastPanHandY = currentPanY;
+
+    lastPanHandX = currentX;
+    lastPanHandY = currentY;
     return;
   } else {
-    lastPanHandX = null; 
+    lastPanHandX = null;
     lastPanHandY = null;
   }
 
-  // ───── GESTURE 3: WRITE / DRAW / STAMP MODE (1 Finger) ─────
+  // ───── GESTURE D: 1 FINGER (INDEX) → DRAW / STAMP ─────
   if (indexUp && !middleUp && !ringUp && !pinkyUp && !thumbExtended) {
     clearHoverRings();
     if (!isActionActive) { saveSnap(); isActionActive = true; }
@@ -797,7 +858,6 @@ function onResults(results) {
     const correctedX = (indexTip.x * scaleX) - offsetX;
     const correctedY = (indexTip.y * scaleY) - offsetY;
     
-    // Pass raw normalized container percentages down to our internal tracking routine
     drawStroke(1 - correctedX, correctedY);
     return;
   } else {
@@ -805,16 +865,8 @@ function onResults(results) {
     flushCoordinates();
   }
 
-  // ───── GESTURE 4: NAVIGATION HOVER MODE (Thumb Out Only) ─────
-  if (thumbExtended && !indexUp && !middleUp && !ringUp && !pinkyUp) {
-    setStatus('paused', 'Air Menu Hover Active');
-    const correctedThumbX = (thumbTip.x * scaleX) - offsetX;
-    const correctedThumbY = (thumbTip.y * scaleY) - offsetY;
-    processUniversalAirHover(1 - correctedThumbX, correctedThumbY);
-  } else {
-    clearHoverRings();
-    setStatus('ready', 'Airclout Navigation Mode');
-  }
+  clearHoverRings();
+  setStatus('ready', 'Airclout Navigation Mode');
 }
 
 const hands = new Hands({ locateFile: f=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
@@ -840,4 +892,3 @@ document.getElementById('whatsappBtn').addEventListener('click', () => {
 </script>
 </body>
 </html>
-
