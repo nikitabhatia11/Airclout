@@ -99,29 +99,58 @@
     #paintCanvas { z-index: 10; background: transparent; }
     #glitterCanvas { z-index: 11; pointer-events: none; }
 
-    /* ───── DROPDOWN COLOUR PALETTE ───── */
-    #paletteContainer {
-      position: absolute; top: 12px; left: 12px; z-index: 30;
-      display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+    /* ───── HORIZONTAL TOP TOOLBAR ───── */
+    #topToolbar {
+      position: absolute; top: 0; left: 0; right: 0; z-index: 30;
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+      background: rgba(7, 7, 15, 0.88); backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      flex-wrap: nowrap; overflow-x: auto;
     }
-    #paletteDropdownBtn {
-      background: rgba(7, 7, 15, 0.9); backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.12); color: var(--text);
-      padding: 6px 12px; border-radius: 10px; font-family: 'Space Grotesk', sans-serif;
-      font-size: 0.78rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;
-      position: relative;
+    #topToolbar::-webkit-scrollbar { height: 0; }
+
+    /* Toolbar section divider */
+    .toolbar-divider {
+      width: 1px; height: 28px; background: rgba(255,255,255,0.1); flex-shrink: 0; margin: 0 2px;
     }
-    #paletteDropdownBtn:hover { background: #121226; border-color: var(--purple); }
-    #paletteDropdownBtn .hover-ring {
-      position: absolute; inset: -4px; border: 1.5px dashed var(--cyan); border-radius: 10px;
+
+    /* Dropdown trigger buttons inside toolbar */
+    .toolbar-btn {
+      background: rgba(255,255,255,0.08); backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.16); color: var(--text);
+      padding: 12px 18px; border-radius: 12px; font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.9rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px;
+      position: relative; flex-shrink: 0; white-space: nowrap; min-height: 48px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .toolbar-btn:hover { background: rgba(255,255,255,0.13); border-color: var(--purple); }
+    .toolbar-btn.active-mode { background: rgba(162,89,255,0.28); border-color: var(--purple); }
+    .toolbar-btn .hover-ring {
+      position: absolute; inset: -7px; border: 4px dashed var(--cyan); border-radius: 12px;
       animation: spin 2s linear infinite; display: none; pointer-events: none;
     }
 
+    /* Undo/Redo/Clear inline buttons */
+    .toolbar-icon-btn {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      color: var(--text); padding: 10px 14px; border-radius: 10px; min-height: 42px;
+      font-family: 'Space Grotesk', sans-serif; font-size: 0.88rem; font-weight: 700;
+      cursor: pointer; flex-shrink: 0; transition: background 0.15s, border-color 0.15s;
+      position: relative;
+    }
+    .toolbar-icon-btn:hover { background: rgba(255,255,255,0.14); border-color: var(--cyan); }
+    .toolbar-icon-btn .hover-ring {
+      position: absolute; inset: -7px; border: 4px dashed var(--cyan); border-radius: 12px;
+      animation: spin 2s linear infinite; display: none; pointer-events: none;
+    }
+
+    /* Palette dropdown — see #paletteContainer below */
+
     #screenPalette {
       display: none; grid-template-columns: repeat(2, 1fr); gap: 6px;
-      background: rgba(7, 7, 15, 0.88); backdrop-filter: blur(12px);
+      background: rgba(7, 7, 15, 0.92); backdrop-filter: blur(14px);
       border: 1px solid rgba(255, 255, 255, 0.08); padding: 8px; border-radius: 14px;
-      max-height: min(70vh, 460px); overflow-y: auto; width: 96px;
+      max-height: min(65vh, 420px); overflow-y: auto; width: 96px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.5);
       transition: border-color 0.25s ease, box-shadow 0.25s ease;
     }
@@ -148,13 +177,34 @@
       padding: 6px 2px; border-radius: 8px; cursor: pointer; transition: background 0.15s, border-color 0.15s;
     }
     .palette-action-btn:hover { background: rgba(255,255,255,0.14); border-color: var(--cyan); }
+    .palette-action-btn.active-mode {
+      background: rgba(162,89,255,0.28); border-color: var(--purple); color: #ffffff;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.4);
+    }
+    .palette-action-btn.danger { border-color: #59242a; color: #ff9da6; background: #241215; }
+    .palette-action-btn.danger:hover { border-color: #8c353f; background: #331519; color: #ffcbd0; }
     .palette-action-btn .hover-ring {
+      position: absolute; inset: -4px; border: 1.5px dashed var(--cyan); border-radius: 10px;
+      animation: spin 2s linear infinite; display: none; pointer-events: none;
+    }
+
+    .size-preset-row { grid-column: span 2; display: flex; gap: 5px; }
+    .size-preset-btn {
+      flex: 1; position: relative; background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.14); color: var(--text);
+      font-family: 'Space Grotesk', sans-serif; font-size: 0.68rem; font-weight: 700;
+      padding: 6px 2px; border-radius: 8px; cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .size-preset-btn:hover { background: rgba(255,255,255,0.14); border-color: var(--cyan); transform: scale(1.05); }
+    .size-preset-btn.active { border-color: var(--cyan); background: rgba(0,236,255,0.18); box-shadow: 0 0 8px rgba(0,236,255,0.4); }
+    .size-preset-btn .hover-ring {
       position: absolute; inset: -4px; border: 1.5px dashed var(--cyan); border-radius: 10px;
       animation: spin 2s linear infinite; display: none; pointer-events: none;
     }
     
     .screen-swatch {
-      width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent;
+      width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent;
       box-shadow: 0 3px 6px rgba(0,0,0,0.4); position: relative; cursor: pointer; transition: transform 0.1s;
     }
     .screen-swatch:hover { transform: scale(1.15); }
@@ -174,23 +224,31 @@
       animation: spin 2s linear infinite; display: none; pointer-events: none;
     }
 
-    /* ───── DROPDOWN STICKER PALETTE ───── */
+    /* ───── DROPDOWN PANELS — fixed to viewport so stage overflow:hidden can't clip them ───── */
+    #paletteContainer {
+      position: fixed; top: 0; left: 0; z-index: 9000;
+      display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+      pointer-events: none;
+    }
+    #paletteContainer.show { pointer-events: auto; }
+    #paletteDropdownBtn { display: none !important; }
+
     #stickerContainer {
-      position: absolute; top: 12px; right: 12px; z-index: 30;
-      display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+      position: fixed; top: 0; left: 0; z-index: 9000;
+      display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+      pointer-events: none;
     }
-    #stickerDropdownBtn {
-      background: rgba(7, 7, 15, 0.9); backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.12); color: var(--text);
-      padding: 6px 12px; border-radius: 10px; font-family: 'Space Grotesk', sans-serif;
-      font-size: 0.78rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;
-      position: relative;
+    #stickerContainer.show { pointer-events: auto; }
+    #stickerDropdownBtn { display: none !important; }
+
+    /* ───── TOOLS DROPDOWN — fixed to viewport ───── */
+    #toolsContainer {
+      position: fixed; top: 0; left: 0; z-index: 9000;
+      display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+      pointer-events: none;
     }
-    #stickerDropdownBtn:hover { background: #121226; border-color: var(--purple); }
-    #stickerDropdownBtn .hover-ring {
-      position: absolute; inset: -4px; border: 1.5px dashed var(--cyan); border-radius: 10px;
-      animation: spin 2s linear infinite; display: none; pointer-events: none;
-    }
+    #toolsContainer.show { pointer-events: auto; }
+    #toolsDropdownBtn { display: none !important; }
     
     #stickerMenu {
       display: none; grid-template-columns: repeat(4, 1fr); gap: 6px;
@@ -201,8 +259,8 @@
     #stickerMenu.show { display: grid; }
     
     .sticker-swatch {
-      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
-      font-size: 1.2rem; cursor: pointer; border-radius: 6px; transition: transform 0.1s; position: relative;
+      width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;
+      font-size: 1.35rem; cursor: pointer; border-radius: 8px; padding:6px; transition: transform 0.1s; position: relative;
     }
     .sticker-swatch:hover { transform: scale(1.15); background: rgba(255,255,255,0.08); }
     .sticker-swatch.active { background: rgba(0, 236, 255, 0.15); border: 1px solid var(--cyan); }
@@ -211,6 +269,95 @@
     }
 
     @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    /* Tools menu — see #toolsContainer below */
+    #toolsMenu {
+      display: none; flex-direction: column; gap: 6px;
+      background: rgba(7, 7, 15, 0.92); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08); padding: 10px; border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 190px;
+      max-height: min(65vh, 460px); overflow-y: auto;
+    }
+    #toolsMenu.show { display: flex; }
+    #toolsMenu::-webkit-scrollbar { width: 4px; }
+    #toolsMenu::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 4px; }
+
+    /* ───── SIZE PICKER DROPDOWNS — fixed to viewport ───── */
+    #brushContainer, #eraserContainer {
+      position: fixed; top: 0; left: 0; z-index: 9000;
+      display: flex; flex-direction: column; align-items: flex-start;
+      pointer-events: none;
+    }
+    #brushContainer.show, #eraserContainer.show { pointer-events: auto; }
+    #brushMenu, #eraserMenu {
+      display: none; flex-direction: column; gap: 8px;
+      background: rgba(7, 7, 15, 0.96); backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.08); padding: 12px; border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.55); width: 200px;
+    }
+    #brushMenu.show, #eraserMenu.show { display:flex; }
+
+    /* ───── FULLSCREEN ENLARGED UI ───── */
+    .stage.fullscreen-mode #topToolbar {
+      padding: 12px 14px; gap: 10px;
+    }
+    .stage.fullscreen-mode .toolbar-btn {
+      padding: 13px 20px; font-size: 0.95rem; min-height: 52px; border-radius: 12px;
+    }
+    .stage.fullscreen-mode .toolbar-icon-btn {
+      padding: 13px 18px; font-size: 1rem; min-height: 52px; border-radius: 12px;
+    }
+    .stage.fullscreen-mode .toolbar-divider { height: 36px; }
+    .stage.fullscreen-mode .screen-swatch { width: 36px; height: 36px; }
+    .stage.fullscreen-mode .sticker-swatch { width: 44px; height: 44px; font-size: 1.6rem; }
+    .stage.fullscreen-mode #screenPalette { width: 122px; gap: 8px; padding: 10px; }
+    .stage.fullscreen-mode #stickerMenu { width: 220px; gap: 8px; padding: 10px; }
+    .stage.fullscreen-mode .palette-action-btn { font-size: 0.82rem; padding: 10px 4px; }
+    .stage.fullscreen-mode .size-preset-btn { font-size: 0.88rem; padding: 10px 4px; }
+    .stage.fullscreen-mode #toolsMenu { width: 230px; padding: 14px; gap: 8px; }
+    .stage.fullscreen-mode #maximizeBtn { width: 52px; height: 52px; border-radius: 14px; font-size: 1.3rem; bottom: 16px; right: 16px; }
+    .stage.fullscreen-mode .palette-section-title { font-size: 0.7rem; }
+
+    /* Dropdowns scale up when fullscreen is active — applied on body so fixed containers
+       (which live outside .stage) also grow correctly */
+    body.stage-fullscreen #screenPalette {
+      width: 140px; gap: 10px; padding: 12px;
+    }
+    body.stage-fullscreen .screen-swatch { width: 42px; height: 42px; }
+    body.stage-fullscreen .palette-section-title { font-size: 0.72rem; }
+    body.stage-fullscreen #stickerMenu {
+      width: 256px; gap: 10px; padding: 12px; grid-template-columns: repeat(4, 1fr);
+    }
+    body.stage-fullscreen .sticker-swatch { width: 52px; height: 52px; font-size: 1.8rem; }
+    body.stage-fullscreen #toolsMenu { width: 260px; padding: 16px; gap: 10px; }
+    body.stage-fullscreen .palette-action-btn { font-size: 0.9rem; padding: 13px 6px; min-height: 44px; }
+    body.stage-fullscreen #brushMenu, body.stage-fullscreen #eraserMenu {
+      width: 260px; padding: 16px; gap: 12px;
+    }
+    body.stage-fullscreen .size-preset-btn { font-size: 1rem; padding: 13px 4px; min-height: 44px; }
+
+    /* ───── MAXIMIZE / MINIMIZE BUTTON — bottom-right corner of canvas ───── */
+    #maximizeBtn {
+      position: absolute; bottom: 12px; right: 12px; z-index: 35;
+      background: rgba(7,7,15,0.75); backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.18);
+      color: var(--text); width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 1.05rem; flex-shrink: 0;
+      transition: background 0.15s, border-color 0.15s, transform 0.15s;
+    }
+    #maximizeBtn:hover { background: rgba(162,89,255,0.35); border-color: var(--purple); transform: scale(1.08); }
+    #maximizeBtn:active { transform: scale(0.95); }
+
+    /* ───── FULLSCREEN STAGE MODE ───── */
+    .stage.fullscreen-mode {
+      position: fixed !important; inset: 0 !important;
+      width: 100vw !important; height: 100vh !important;
+      aspect-ratio: unset !important;
+      border-radius: 0 !important; z-index: 5000;
+      max-width: none !important;
+    }
+    body.stage-fullscreen { overflow: hidden; }
 
     #miniBanner {
       display: none; position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
@@ -230,7 +377,6 @@
     .tool-label { font-size: 0.7rem; color: var(--muted); }
     .tool-group input[type="range"] { -webkit-appearance: none; width: 70px; height: 3px; border-radius: 2px; background: #252540; outline: none; cursor: pointer; }
     .tool-group input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%; background: var(--cyan); cursor: pointer; }
-    #eraserSize::-webkit-slider-thumb { background: #ff4757 !important; }
     #symmetryFolds { background: #0e0e1c; color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 3px 7px; font-size: 0.76rem; cursor: pointer; outline: none; }
 
     /* ───── INTERFACE CONTROL BUTTONS ───── */
@@ -310,79 +456,138 @@
   <video id="webcam" autoplay playsinline muted></video>
   <canvas id="paintCanvas"></canvas>
   <canvas id="glitterCanvas"></canvas>
-  
-  <div id="paletteContainer">
-    <button id="paletteDropdownBtn">🎨 Colours ▼<span class="hover-ring"></span></button>
-    <div id="screenPalette">
-      <div class="palette-section-title">Special</div>
-      <div class="screen-swatch rainbow-swatch" data-type="color" data-mode="rainbow"><div class="hover-ring"></div></div>
 
-      <div class="palette-section-title">Neon (4)</div>
-      <div class="screen-swatch active" style="background:#00ecff; color:#00ecff" data-color="#00ecff" data-type="color" data-mode="normal"><div class="hover-ring"></div></div>
-      <div class="screen-swatch" style="background:#ff00ff; color:#ff00ff" data-color="#ff00ff" data-type="color" data-mode="normal"><div class="hover-ring"></div></div>
-      <div class="screen-swatch" style="background:#39ff14; color:#39ff14" data-color="#39ff14" data-type="color" data-mode="normal"><div class="hover-ring"></div></div>
-      <div class="screen-swatch" style="background:#ff6600; color:#ff6600" data-color="#ff6600" data-type="color" data-mode="normal"><div class="hover-ring"></div></div>
+  <!-- ───── HORIZONTAL TOP TOOLBAR ───── -->
+  <div id="topToolbar">
+    <!-- Colours -->
+    <button class="toolbar-btn" id="toolbarPaletteBtn">🎨 Colours ▾<span class="hover-ring"></span></button>
 
-      <div class="palette-section-title">Glitter (5)</div>
-      <div class="screen-swatch glitter" style="background:linear-gradient(135deg,#ff9ecd,#ffcf77); color:#ffaad4" data-color="#ffaad4" data-type="color" data-mode="glitter"><div class="hover-ring"></div></div>
-      <div class="screen-swatch glitter" style="background:linear-gradient(135deg,#a0f4ff,#d5b3ff); color:#a0f4ff" data-color="#a0f4ff" data-type="color" data-mode="glitter"><div class="hover-ring"></div></div>
-      <div class="screen-swatch glitter" style="background:linear-gradient(135deg,#7bf2b2,#b3f5ff); color:#7bf2b2" data-color="#7bf2b2" data-type="color" data-mode="glitter"><div class="hover-ring"></div></div>
-      <div class="screen-swatch glitter" style="background:linear-gradient(135deg,#ffe600,#ff8800); color:#ffe600" data-color="#ffe600" data-type="color" data-mode="glitter"><div class="hover-ring"></div></div>
-      <div class="screen-swatch glitter" style="background:linear-gradient(135deg,#ffffff,#a1a1a1); color:#ffffff" data-color="#ffffff" data-type="color" data-mode="glitter"><div class="hover-ring"></div></div>
+    <div class="toolbar-divider"></div>
 
-      <div class="palette-section-title">Normal (5)</div>
-      <div class="screen-swatch" style="background:#e74c3c; color:#e74c3c" data-color="#e74c3c" data-type="color" data-mode="normal"><div class="hover-ring"></div></div>
-      <div class="screen-swatch" style="background:#3498db; color:#3498db" data-color="#3498db" data-type="color" data-mode="normal"><div class="hover-ring"></div></div>
-      <div class="screen-swatch" style="background:#f1c40f; color:#f1c40f" data-color="#f1c40f" data-type="color" data-mode="normal"><div class="hover-ring"></div></div>
-      <div class="screen-swatch" style="background:#9b59b6; color:#9b59b6" data-color="#9b59b6" data-type="color" data-mode="normal"><div class="hover-ring"></div></div>
-      <div class="screen-swatch" style="background:#ffffff; color:#ffffff" data-color="#ffffff" data-type="color" data-mode="normal"><div class="hover-ring"></div></div>
+    <!-- Stickers -->
+    <button class="toolbar-btn" id="toolbarStickerBtn">Stickers <span id="activeStickerView">⭐</span> ▾<span class="hover-ring"></span></button>
 
-      <div class="palette-section-title">Clear Area</div>
-      <div class="screen-swatch eraser-swatch" data-type="eraser">⌫<div class="hover-ring"></div></div>
+    <div class="toolbar-divider"></div>
 
-      <div class="palette-section-title">Canvas</div>
-      <div class="palette-action-row">
-        <button class="palette-action-btn" id="undoBtn">↩ Undo<span class="hover-ring"></span></button>
-        <button class="palette-action-btn" id="redoBtn">↪ Redo<span class="hover-ring"></span></button>
-      </div>
-    </div>
-  </div>
+    <!-- Tools -->
+    <button class="toolbar-btn" id="toolbarToolsBtn">🛠 Tools ▾<span class="hover-ring"></span></button>
 
-  <div id="stickerContainer">
-    <button id="stickerDropdownBtn">Stickers <span id="activeStickerView">⭐</span> ▼</button>
-    <div id="stickerMenu">
-      <div class="sticker-swatch active" data-emoji="⭐">⭐<div class="hover-ring"></div></div>
-      <div class="sticker-swatch" data-emoji="❤️">❤️<div class="hover-ring"></div></div>
-      <div class="sticker-swatch" data-emoji="🔥">🔥<div class="hover-ring"></div></div>
-      <div class="sticker-swatch" data-emoji="✨">✨<div class="hover-ring"></div></div>
-      <div class="sticker-swatch" data-emoji="🚀">🚀<div class="hover-ring"></div></div>
-      <div class="sticker-swatch" data-emoji="👑">👑<div class="hover-ring"></div></div>
-      <div class="sticker-swatch" data-emoji="🎉">🎉<div class="hover-ring"></div></div>
-      <div class="sticker-swatch" data-emoji="🎨">🎨<div class="hover-ring"></div></div>
-      <div class="sticker-swatch" data-emoji="🐱">🐱<div class="hover-ring"></div></div>
-      <div class="sticker-swatch" data-emoji="👻">👻<div class="hover-ring"></div></div>
-      <div class="sticker-swatch" data-emoji="🍕">🍕<div class="hover-ring"></div></div>
-      <div class="sticker-swatch" data-emoji="💎">💎<div class="hover-ring"></div></div>
-    </div>
+    <div class="toolbar-divider"></div>
+
+    <!-- Undo / Redo inline -->
+    <button class="toolbar-icon-btn" id="undoBtn" title="Undo">↩<span class="hover-ring"></span></button>
+    <button class="toolbar-icon-btn" id="redoBtn" title="Redo">↪<span class="hover-ring"></span></button>
+
+    <div class="toolbar-divider"></div>
+
+    <!-- Brush -->
+    <button class="toolbar-btn" id="toolbarBrushBtn">🖌 Brush ▾<span class="hover-ring"></span></button>
+    <button class="toolbar-btn" id="toolbarEraserBtn">⌫ Eraser ▾<span class="hover-ring"></span></button>
+
+    <div class="toolbar-divider"></div>
+
+    <!-- Clear -->
+    <button class="toolbar-icon-btn" id="clearBtn" style="border-color:#59242a;color:#ff9da6;background:#241215;">✕ Clear<span class="hover-ring"></span></button>
+
+    <div class="toolbar-divider"></div>
+
   </div>
 
   <div id="miniBanner">drawing minimised — write freely!</div>
+  <!-- Maximize / Minimize — fixed bottom-right corner of the canvas -->
+  <button id="maximizeBtn" title="Maximize canvas">⛶</button>
   <div id="cameraOverlay">
     <p>Allow camera access to begin</p>
   </div>
 </div>
 
+<!-- ── ALL DROPDOWN CONTAINERS — outside stage so overflow:hidden never clips them ── -->
+<div id="paletteContainer">
+  <button id="paletteDropdownBtn">🎨 Colours ▼<span class="hover-ring"></span></button>
+  <div id="screenPalette">
+    <div class="palette-section-title">Special</div>
+    <div class="screen-swatch rainbow-swatch" data-type="color" data-mode="rainbow"><div class="hover-ring"></div></div>
+    <div class="palette-section-title">Neon (4)</div>
+    <div class="screen-swatch active" style="background:#00ecff;color:#00ecff" data-color="#00ecff" data-type="color" data-mode="normal"><div class="hover-ring"></div></div>
+    <div class="screen-swatch" style="background:#ff00ff;color:#ff00ff" data-color="#ff00ff" data-type="color" data-mode="normal"><div class="hover-ring"></div></div>
+    <div class="screen-swatch" style="background:#39ff14;color:#39ff14" data-color="#39ff14" data-type="color" data-mode="normal"><div class="hover-ring"></div></div>
+    <div class="screen-swatch" style="background:#ff6600;color:#ff6600" data-color="#ff6600" data-type="color" data-mode="normal"><div class="hover-ring"></div></div>
+    <div class="palette-section-title">Glitter (5)</div>
+    <div class="screen-swatch glitter" style="background:linear-gradient(135deg,#ff9ecd,#ffcf77);color:#ffaad4" data-color="#ffaad4" data-type="color" data-mode="glitter"><div class="hover-ring"></div></div>
+    <div class="screen-swatch glitter" style="background:linear-gradient(135deg,#a0f4ff,#d5b3ff);color:#a0f4ff" data-color="#a0f4ff" data-type="color" data-mode="glitter"><div class="hover-ring"></div></div>
+    <div class="screen-swatch glitter" style="background:linear-gradient(135deg,#7bf2b2,#b3f5ff);color:#7bf2b2" data-color="#7bf2b2" data-type="color" data-mode="glitter"><div class="hover-ring"></div></div>
+    <div class="screen-swatch glitter" style="background:linear-gradient(135deg,#ffe600,#ff8800);color:#ffe600" data-color="#ffe600" data-type="color" data-mode="glitter"><div class="hover-ring"></div></div>
+    <div class="screen-swatch glitter" style="background:linear-gradient(135deg,#ffffff,#a1a1a1);color:#ffffff" data-color="#ffffff" data-type="color" data-mode="glitter"><div class="hover-ring"></div></div>
+    <div class="palette-section-title">Normal (5)</div>
+    <div class="screen-swatch" style="background:#e74c3c;color:#e74c3c" data-color="#e74c3c" data-type="color" data-mode="normal"><div class="hover-ring"></div></div>
+    <div class="screen-swatch" style="background:#3498db;color:#3498db" data-color="#3498db" data-type="color" data-mode="normal"><div class="hover-ring"></div></div>
+    <div class="screen-swatch" style="background:#f1c40f;color:#f1c40f" data-color="#f1c40f" data-type="color" data-mode="normal"><div class="hover-ring"></div></div>
+    <div class="screen-swatch" style="background:#9b59b6;color:#9b59b6" data-color="#9b59b6" data-type="color" data-mode="normal"><div class="hover-ring"></div></div>
+    <div class="screen-swatch" style="background:#ffffff;color:#ffffff" data-color="#ffffff" data-type="color" data-mode="normal"><div class="hover-ring"></div></div>
+    <div class="palette-section-title">Eraser</div>
+    <div class="screen-swatch eraser-swatch" data-type="eraser">⌫<div class="hover-ring"></div></div>
+  </div>
+</div>
+
+<div id="stickerContainer">
+  <button id="stickerDropdownBtn">Stickers ▼</button>
+  <div id="stickerMenu">
+    <div class="sticker-swatch active" data-emoji="⭐">⭐<div class="hover-ring"></div></div>
+    <div class="sticker-swatch" data-emoji="❤️">❤️<div class="hover-ring"></div></div>
+    <div class="sticker-swatch" data-emoji="🔥">🔥<div class="hover-ring"></div></div>
+    <div class="sticker-swatch" data-emoji="✨">✨<div class="hover-ring"></div></div>
+    <div class="sticker-swatch" data-emoji="🚀">🚀<div class="hover-ring"></div></div>
+    <div class="sticker-swatch" data-emoji="👑">👑<div class="hover-ring"></div></div>
+    <div class="sticker-swatch" data-emoji="🎉">🎉<div class="hover-ring"></div></div>
+    <div class="sticker-swatch" data-emoji="🎨">🎨<div class="hover-ring"></div></div>
+    <div class="sticker-swatch" data-emoji="🐱">🐱<div class="hover-ring"></div></div>
+    <div class="sticker-swatch" data-emoji="👻">👻<div class="hover-ring"></div></div>
+    <div class="sticker-swatch" data-emoji="🍕">🍕<div class="hover-ring"></div></div>
+    <div class="sticker-swatch" data-emoji="💎">💎<div class="hover-ring"></div></div>
+  </div>
+</div>
+
+<div id="toolsContainer">
+  <button id="toolsDropdownBtn">🛠 Tools ▼<span class="hover-ring"></span></button>
+  <div id="toolsMenu">
+    <div class="palette-section-title">Modes</div>
+    <div class="palette-action-row">
+      <button class="palette-action-btn" id="blackboardToggleBtn"><span class="btn-label">▤ blackboard off</span><span class="hover-ring"></span></button>
+    </div>
+    <div class="palette-action-row">
+      <button class="palette-action-btn" id="fillModeToggleBtn"><span class="btn-label">🪣 fill mode off</span><span class="hover-ring"></span></button>
+    </div>
+    <div class="palette-action-row">
+      <button class="palette-action-btn" id="symmetryToggleBtn"><span class="btn-label">🪞 symmetry off</span><span class="hover-ring"></span></button>
+    </div>
+  </div>
+</div>
+
+<div id="brushContainer"><div id="brushMenu">
+  <div class="palette-section-title">🖌 Brush Size</div>
+  <div class="size-preset-row" data-target="brush">
+    <button class="size-preset-btn" data-size="3">S<span class="hover-ring"></span></button>
+    <button class="size-preset-btn active" data-size="6">M<span class="hover-ring"></span></button>
+    <button class="size-preset-btn" data-size="12">L<span class="hover-ring"></span></button>
+    <button class="size-preset-btn" data-size="20">XL<span class="hover-ring"></span></button>
+  </div>
+</div></div>
+
+<div id="eraserContainer"><div id="eraserMenu">
+  <div class="palette-section-title" style="color:#ff9da6;">⌫ Eraser</div>
+  <div class="palette-action-row">
+    <button class="palette-action-btn" id="eraserToggleBtn"><span class="btn-label">⌫ eraser off</span><span class="hover-ring"></span></button>
+  </div>
+  <div class="palette-section-title">⌫ Eraser Size</div>
+  <div class="size-preset-row" data-target="eraser">
+    <button class="size-preset-btn" data-size="15">S<span class="hover-ring"></span></button>
+    <button class="size-preset-btn active" data-size="30">M<span class="hover-ring"></span></button>
+    <button class="size-preset-btn" data-size="50">L<span class="hover-ring"></span></button>
+    <button class="size-preset-btn" data-size="75">XL<span class="hover-ring"></span></button>
+  </div>
+</div></div>
+
 <div class="tool-row">
-  <div class="tool-group">
-    <span class="tool-label">Brush Size</span>
-    <input type="range" id="brushSize" min="2" max="24" value="5"/>
-    <span id="brushSizeLabel" style="font-size:0.72rem;color:var(--muted);width:26px">5px</span>
-  </div>
-  <div class="tool-group">
-    <span class="tool-label" style="color: #ff4757;">Eraser Size</span>
-    <input type="range" id="eraserSize" min="10" max="80" value="30"/>
-    <span id="eraserSizeLabel" style="font-size:0.72rem;color:var(--muted);width:26px">30px</span>
-  </div>
   <div class="tool-group">
     <span class="tool-label">Mandala Folds</span>
     <select id="symmetryFolds">
@@ -396,15 +601,11 @@
 </div>
 
 <div class="btn-row">
-  <button class="pill pill-board" id="blackboardToggleBtn">▤ blackboard off</button>
-  <button class="pill pill-accent" id="fillModeToggleBtn">🪣 fill mode off</button>
-  <button class="pill pill-accent" id="symmetryToggleBtn">🪞 symmetry off</button>
   <button class="pill" id="ocrBtn">⌕ read writing</button>
   <button class="pill pill-accent" id="aiBtn">✦ ai complete</button>
   <button class="pill" id="saveBtn">↓ save</button>
   <button class="pill" id="timelapseBtn">🎬 export timelapse</button>
   <button class="pill pill-whatsapp" id="whatsappBtn">p share</button>
-  <button class="pill pill-danger" id="clearBtn">✕ clear all</button>
 </div>
 
 <div class="result-panel" id="ocrPanel">
@@ -436,6 +637,7 @@
   </div>
   <div class="help-section">
     <h4>Modes & extras</h4>
+    <div class="help-row"><span class="help-emoji">🛠️</span><span>Tools (bottom-left of the camera view) — blackboard, fill mode, symmetry, brush/eraser size, and clear all, all pointable with your finger</span></div>
     <div class="help-row"><span class="help-emoji">🪣</span><span>Fill mode — picking a color floods the whole canvas instead of just the brush</span></div>
     <div class="help-row"><span class="help-emoji">🖍️</span><span>Blackboard — chalk now matches whatever color you've picked</span></div>
     <div class="help-row"><span class="help-emoji">🪞</span><span>Symmetry — mirrors every stroke into a mandala pattern</span></div>
@@ -476,6 +678,8 @@ const helpToggleBtn     = document.getElementById('helpToggleBtn');
 const helpPanel         = document.getElementById('helpPanel');
 const screenPaletteEl  = document.getElementById('screenPalette');
 const paletteDropdownBtn = document.getElementById('paletteDropdownBtn');
+const toolsDropdownBtn = document.getElementById('toolsDropdownBtn');
+const toolsMenu = document.getElementById('toolsMenu');
 
 // FIXED: Increased baseline internal resolution to 1280x960 to match 4:3 monitors and prevent premature clipping borders!
 canvas.width = glitterCvs.width = 1280;
@@ -489,18 +693,20 @@ function flushCoordinates() {
   lastY = null;
 }
 
-blackboardBtn.addEventListener('click', () => {
+blackboardBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
   flushCoordinates();
   isBlackboardMode = !isBlackboardMode;
+  const label = blackboardBtn.querySelector('.btn-label');
   if(isBlackboardMode) {
     appStage.classList.add('blackboard-active');
     blackboardBtn.classList.add('active-mode');
-    blackboardBtn.textContent = "▩ blackboard on";
+    label.textContent = "▩ blackboard on";
     chimeToggleOn();
   } else {
     appStage.classList.remove('blackboard-active');
     blackboardBtn.classList.remove('active-mode');
-    blackboardBtn.textContent = "▤ blackboard off";
+    label.textContent = "▤ blackboard off";
     chimeToggleOff();
   }
 });
@@ -510,17 +716,42 @@ helpToggleBtn.addEventListener('click', () => {
   helpToggleBtn.textContent = isOpen ? '✕ hide guide' : '❓ how this works';
 });
 
-fillModeBtn.addEventListener('click', () => {
+fillModeBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
   fillModeActive = !fillModeActive;
+  const label = fillModeBtn.querySelector('.btn-label');
   if (fillModeActive) {
     fillModeBtn.classList.add('active-mode');
-    fillModeBtn.textContent = "🪣 fill mode on";
+    label.textContent = "🪣 fill mode on";
     chimeToggleOn();
   } else {
     fillModeBtn.classList.remove('active-mode');
-    fillModeBtn.textContent = "🪣 fill mode off";
+    label.textContent = "🪣 fill mode off";
     chimeToggleOff();
   }
+});
+
+// Eraser toggle inside size panel
+function updateEraserToggleBtn() {
+  const btn = document.getElementById('eraserToggleBtn');
+  if (!btn) return;
+  const label = btn.querySelector('.btn-label');
+  if (isEraserMode) {
+    btn.classList.add('active-mode');
+    label.textContent = "⌫ eraser on";
+  } else {
+    btn.classList.remove('active-mode');
+    label.textContent = "⌫ eraser off";
+  }
+}
+document.getElementById('eraserToggleBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  isEraserMode = !isEraserMode;
+  activeSticker = null;
+  activeStickerView.textContent = isEraserMode ? "⌫" : "🖌️";
+  updateEraserToggleBtn();
+  flushCoordinates();
+  isEraserMode ? chimeToggleOn() : chimeToggleOff();
 });
 
 // ── SYMMETRY / MANDALA MODE ────────────────────────────────────────────────────
@@ -531,16 +762,18 @@ symmetryFoldsSelect.addEventListener('change', (e) => {
   symmetryFolds = parseInt(e.target.value, 10) || 6;
 });
 
-symmetryToggleBtn.addEventListener('click', () => {
+symmetryToggleBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
   flushCoordinates();
   symmetryModeActive = !symmetryModeActive;
+  const label = symmetryToggleBtn.querySelector('.btn-label');
   if (symmetryModeActive) {
     symmetryToggleBtn.classList.add('active-mode');
-    symmetryToggleBtn.textContent = "🪞 symmetry on";
+    label.textContent = "🪞 symmetry on";
     chimeToggleOn();
   } else {
     symmetryToggleBtn.classList.remove('active-mode');
-    symmetryToggleBtn.textContent = "🪞 symmetry off";
+    label.textContent = "🪞 symmetry off";
     chimeToggleOff();
   }
 });
@@ -578,7 +811,7 @@ function applyViewportTransform() {
 }
 
 // ── DRAWING STATE ─────────────────────────────────────────────────────────────
-let strokeColor = '#00ecff', brushMode = 'normal', strokeWidth = 5, eraserWidth = 30;
+let strokeColor = '#00ecff', brushMode = 'normal', strokeWidth = 6, eraserWidth = 30;
 let lastX = null, lastY = null, isActionActive = false;
 let isEraserMode = false; 
 let activeSticker = null; 
@@ -597,7 +830,7 @@ function setColorSelectionMode(on) {
 
 let currentHoveredItem = null;
 let hoverStartTime = 0;
-const HOVER_DELAY = 450; 
+const HOVER_DELAY = 350; 
 
 function setStatus(s, t) { badge.className = s; statusTxt.textContent = t; }
 
@@ -611,17 +844,139 @@ function triggerSuccessPulse() {
   });
 }
 
-stickerDropdownBtn.addEventListener('click', (e) => {
-  e.stopPropagation();
-  stickerMenu.classList.toggle('show');
+stickerDropdownBtn.addEventListener('click', (e) => { e.stopPropagation(); });
+paletteDropdownBtn.addEventListener('click', (e) => { e.stopPropagation(); });
+toolsDropdownBtn.addEventListener('click', (e) => { e.stopPropagation(); });
+
+// ── TOOLBAR BUTTON WIRING ─────────────────────────────────────────────────────
+const toolbarPaletteBtn = document.getElementById('toolbarPaletteBtn');
+const toolbarStickerBtn = document.getElementById('toolbarStickerBtn');
+const toolbarToolsBtn   = document.getElementById('toolbarToolsBtn');
+const toolbarBrushBtn   = document.getElementById('toolbarBrushBtn');
+const toolbarEraserBtn  = document.getElementById('toolbarEraserBtn');
+const paletteContainer  = document.getElementById('paletteContainer');
+const stickerContainer  = document.getElementById('stickerContainer');
+const toolsContainer    = document.getElementById('toolsContainer');
+const brushContainer    = document.getElementById('brushContainer');
+const eraserContainer   = document.getElementById('eraserContainer');
+const brushMenu         = document.getElementById('brushMenu');
+const eraserMenu        = document.getElementById('eraserMenu');
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DROPDOWN SYSTEM — human-friendly, no flicker
+//
+// ROOT CAUSE of the flicker: every toolbar button had two listeners fighting
+// each other — the button's own click toggled open, then the document-level
+// click handler fired in the same event cycle and toggled it closed again.
+// On touch screens this is worse because pointerdown + pointerup + click all
+// fire in rapid succession, potentially toggling the same dropdown 2-3 times.
+//
+// THE FIX: one central manager, zero toggle logic, zero document-level listener.
+//   • Each toolbar button listens to 'pointerdown' (fires first, before click).
+//   • pointerdown records WHICH dropdown should open and calls openDropdown().
+//   • openDropdown() closes everything else, then opens the target.
+//   • If you tap the SAME button while its dropdown is already open, it closes it.
+//   • Clicking INSIDE an open dropdown is safe — nothing closes it.
+//   • Clicking OUTSIDE is caught by a single pointerdown on document, but we
+//     mark each toolbar-button pointerdown so the document handler ignores it.
+// ─────────────────────────────────────────────────────────────────────────────
+
+let _activeDropdown = null;   // currently open menu element, or null
+let _ignoreDocumentPointer = false;  // set true when a toolbar btn is pressed
+
+// Anchor a dropdown panel BELOW its toolbar trigger button using fixed viewport coords.
+function anchorDropdownBelow(triggerBtn, containerEl) {
+  const r = triggerBtn.getBoundingClientRect();
+  const panelWidth = containerEl.firstElementChild
+    ? (containerEl.firstElementChild.offsetWidth || 200) : 200;
+  const maxLeft = window.innerWidth - panelWidth - 8;
+  containerEl.style.left = Math.max(4, Math.min(r.left, maxLeft)) + 'px';
+  containerEl.style.top  = (r.bottom + 6) + 'px';
+  containerEl.classList.add('show');
+}
+
+function closeAllDropdowns() {
+  [screenPaletteEl, stickerMenu, toolsMenu, brushMenu, eraserMenu].forEach(m => m.classList.remove('show'));
+  [paletteContainer, stickerContainer, toolsContainer, brushContainer, eraserContainer].forEach(c => c.classList.remove('show'));
+  _activeDropdown = null;
+}
+
+function openDropdown(menuEl, triggerBtn, containerEl) {
+  // If this dropdown is already open → close it (acts as a toggle), done.
+  if (_activeDropdown === menuEl) {
+    closeAllDropdowns();
+    return;
+  }
+  // Close whatever is open, then open the requested one.
+  closeAllDropdowns();
+  menuEl.classList.add('show');
+  anchorDropdownBelow(triggerBtn, containerEl);
+  _activeDropdown = menuEl;
+}
+
+// Each toolbar button uses pointerdown so we intercept before any click fires.
+function wireDropdownBtn(triggerBtn, menuEl, containerEl) {
+  triggerBtn.addEventListener('pointerdown', (e) => {
+    e.preventDefault();          // stops the subsequent 'click' from firing at all
+    e.stopPropagation();
+    _ignoreDocumentPointer = true;
+    openDropdown(menuEl, triggerBtn, containerEl);
+  });
+}
+
+wireDropdownBtn(toolbarPaletteBtn, screenPaletteEl, paletteContainer);
+wireDropdownBtn(toolbarStickerBtn, stickerMenu,     stickerContainer);
+wireDropdownBtn(toolbarToolsBtn,   toolsMenu,       toolsContainer);
+wireDropdownBtn(toolbarBrushBtn,   brushMenu,       brushContainer);
+wireDropdownBtn(toolbarEraserBtn,  eraserMenu,      eraserContainer);
+
+// Close dropdowns when the user taps anywhere outside the toolbar or open panel.
+document.addEventListener('pointerdown', (e) => {
+  // If a toolbar button just set this flag, ignore — that button handles itself.
+  if (_ignoreDocumentPointer) { _ignoreDocumentPointer = false; return; }
+  if (!_activeDropdown) return;  // nothing open, nothing to do
+
+  const inToolbar = e.target.closest('#topToolbar');
+  const inPalette = e.target.closest('#paletteContainer');
+  const inSticker = e.target.closest('#stickerContainer');
+  const inTools   = e.target.closest('#toolsContainer');
+  const inBrush   = e.target.closest('#brushContainer');
+  const inEraser  = e.target.closest('#eraserContainer');
+  if (!inToolbar && !inPalette && !inSticker && !inTools && !inBrush && !inEraser) {
+    closeAllDropdowns();
+  }
 });
-paletteDropdownBtn.addEventListener('click', (e) => {
+
+// ── MAXIMIZE / MINIMIZE ───────────────────────────────────────────────────────
+const maximizeBtn = document.getElementById('maximizeBtn');
+let isMaximized = false;
+
+function setMaximizeIcon(maximized) {
+  maximizeBtn.innerHTML = maximized
+    ? '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 14L6 10M14 2L10 6M10 2H14V6M6 14H2V10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    : '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 6V2H6M10 2H14V6M14 10V14H10M6 14H2V10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  maximizeBtn.title = maximized ? 'Minimize canvas' : 'Maximize canvas';
+  if (maximized) {
+    maximizeBtn.style.background = 'rgba(162,89,255,0.35)';
+    maximizeBtn.style.borderColor = 'var(--purple)';
+  } else {
+    maximizeBtn.style.background = '';
+    maximizeBtn.style.borderColor = '';
+  }
+}
+setMaximizeIcon(false);
+
+maximizeBtn.addEventListener('click', (e) => {
   e.stopPropagation();
-  screenPaletteEl.classList.toggle('show');
-});
-document.addEventListener('click', () => {
-  stickerMenu.classList.remove('show');
+  isMaximized = !isMaximized;
+  appStage.classList.toggle('fullscreen-mode', isMaximized);
+  document.body.classList.toggle('stage-fullscreen', isMaximized);
+  // Close all open dropdowns when toggling fullscreen
   screenPaletteEl.classList.remove('show');
+  stickerMenu.classList.remove('show');
+  toolsMenu.classList.remove('show');
+  brushMenu.classList.remove('show'); eraserMenu.classList.remove('show');
+  setMaximizeIcon(isMaximized);
 });
 
 // ── UNDO / REDO PIPELINE ──────────────────────────────────────────────────────
@@ -643,7 +998,8 @@ document.getElementById('redoBtn').addEventListener('click', (e) => {
   undoStack.push(ctx.getImageData(0,0,canvas.width,canvas.height));
   ctx.putImageData(redoStack.pop(), 0, 0);
 });
-document.getElementById('clearBtn').addEventListener('click', () => {
+document.getElementById('clearBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
   saveSnap(); 
   flushCoordinates();
   ctx.clearRect(0,0,canvas.width,canvas.height); 
@@ -660,22 +1016,51 @@ function clearAllSelections() {
 }
 
 function handleSelection(element) {
-  if (element === stickerDropdownBtn) {
-    stickerMenu.classList.toggle('show');
+  // ── Toolbar dropdown triggers — delegate to the central openDropdown manager ──
+  if (element.id === 'toolbarPaletteBtn') { openDropdown(screenPaletteEl, element, paletteContainer); return; }
+  if (element.id === 'toolbarStickerBtn') { openDropdown(stickerMenu,     element, stickerContainer); return; }
+  if (element.id === 'toolbarToolsBtn')   { openDropdown(toolsMenu,       element, toolsContainer);   return; }
+  if (element.id === 'toolbarBrushBtn')   { openDropdown(brushMenu,       element, brushContainer);   return; }
+  if (element.id === 'toolbarEraserBtn')  { openDropdown(eraserMenu,      element, eraserContainer);  return; }
+  // ── Direct action buttons (undo / redo / clear) ──
+  if (element.id === 'undoBtn') {
+    flushCoordinates();
+    if (!undoStack.length) return;
+    redoStack.push(ctx.getImageData(0,0,canvas.width,canvas.height));
+    ctx.putImageData(undoStack.pop(), 0, 0);
+    triggerSuccessPulse();
     return;
   }
-  if (element === paletteDropdownBtn) {
-    screenPaletteEl.classList.toggle('show');
+  if (element.id === 'redoBtn') {
+    flushCoordinates();
+    if (!redoStack.length) return;
+    undoStack.push(ctx.getImageData(0,0,canvas.width,canvas.height));
+    ctx.putImageData(redoStack.pop(), 0, 0);
+    triggerSuccessPulse();
     return;
   }
-  if (element.classList.contains('palette-action-btn')) {
-    element.click(); // reuse its real click handler (undo/redo)
+  if (element.id === 'clearBtn') {
+    saveSnap();
+    flushCoordinates();
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    gCtx.clearRect(0,0,glitterCvs.width,glitterCvs.height);
+    captureTimelapseFrame();
+    triggerSuccessPulse();
+    return;
+  }
+  // ── Old hidden dropdown buttons ──
+  if (element === stickerDropdownBtn) { openDropdown(stickerMenu, stickerDropdownBtn, stickerContainer); return; }
+  if (element === paletteDropdownBtn) { openDropdown(screenPaletteEl, paletteDropdownBtn, paletteContainer); return; }
+  if (element === toolsDropdownBtn)   { openDropdown(toolsMenu, toolsDropdownBtn, toolsContainer); return; }
+  // ── Toggle/size buttons inside menus ──
+  if (element.classList.contains('palette-action-btn') || element.classList.contains('size-preset-btn')) {
+    element.click();
     return;
   }
   clearAllSelections();
   element.classList.add('active');
-  flushCoordinates(); 
-  
+  flushCoordinates();
+
   if (element.dataset.type === 'eraser') {
     isEraserMode = true;
     activeSticker = null;
@@ -684,20 +1069,17 @@ function handleSelection(element) {
     isEraserMode = false;
     activeSticker = element.dataset.emoji;
     activeStickerView.textContent = activeSticker;
-    stickerMenu.classList.remove('show'); 
+    stickerMenu.classList.remove('show');
   } else {
     isEraserMode = false;
     activeSticker = null;
     brushMode = element.dataset.mode || 'normal';
-    if(brushMode === 'rainbow') {
+    if (brushMode === 'rainbow') {
       activeStickerView.textContent = "🌈";
-      // Fill mode doesn't apply to rainbow (no single flat color to flood with).
     } else {
       strokeColor = element.dataset.color;
       activeStickerView.textContent = "🖌️";
-      if (fillModeActive) {
-        fillCanvasWithColor(strokeColor);
-      }
+      if (fillModeActive) fillCanvasWithColor(strokeColor);
     }
   }
   triggerSuccessPulse();
@@ -710,8 +1092,27 @@ document.querySelectorAll('.screen-swatch, .sticker-swatch').forEach(sw => {
   });
 });
 
-document.getElementById('brushSize').addEventListener('input', (e) => { strokeWidth = +e.target.value; document.getElementById('brushSizeLabel').textContent = strokeWidth+'px'; });
-document.getElementById('eraserSize').addEventListener('input', (e) => { eraserWidth = +e.target.value; document.getElementById('eraserSizeLabel').textContent = eraserWidth+'px'; });
+// Brush/eraser size presets (S/M/L/XL) — replaces the old sliders, since the
+// point-and-hold finger gesture can select a button but can't drag a slider.
+function applySizePreset(btn) {
+  const row = btn.closest('.size-preset-row');
+  const target = row.dataset.target; // 'brush' or 'eraser'
+  const size = parseInt(btn.dataset.size, 10);
+  row.querySelectorAll('.size-preset-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (target === 'brush') {
+    strokeWidth = size;
+  } else {
+    eraserWidth = size;
+  }
+  triggerSuccessPulse();
+}
+document.querySelectorAll('.size-preset-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    applySizePreset(btn);
+  });
+});
 
 // ── READ WRITING (OCR FUNCTION) ─────────────────────────────────────────
 document.getElementById('ocrBtn').addEventListener('click', () => {
@@ -1001,6 +1402,9 @@ timelapseBtn.addEventListener('click', async () => {
 });
 
 // ── AIR HOVER SELECTION ──────────────────────────────────────────────────────
+let noTargetSince = null;          // timestamp when finger left all targets
+const NO_TARGET_GRACE_MS = 600;   // ms of empty space tolerated before resetting hover
+
 function processUniversalAirHover(normX, normY) {
   const stageEl = document.querySelector('.stage');
   const rect = stageEl.getBoundingClientRect();
@@ -1008,20 +1412,33 @@ function processUniversalAirHover(normX, normY) {
   const cssY = normY * rect.height;
 
   let foundItem = null;
-  const targets = document.querySelectorAll('.screen-swatch, .sticker-swatch, #stickerDropdownBtn, #paletteDropdownBtn, .palette-action-btn');
-  
+  const targets = document.querySelectorAll(
+    '.screen-swatch, .sticker-swatch, ' +
+    '#toolbarPaletteBtn, #toolbarStickerBtn, #toolbarToolsBtn, #toolbarBrushBtn, #toolbarEraserBtn, ' +
+    '#undoBtn, #redoBtn, #clearBtn, ' +
+    '.palette-action-btn, .size-preset-btn'
+  );
+
   targets.forEach(item => {
+    // Skip items inside hidden menus — they aren't actually visible
+    const menu = item.closest('#screenPalette, #stickerMenu, #toolsMenu, #brushMenu, #eraserMenu');
+    if (menu && !menu.classList.contains('show')) return;
     const iRect = item.getBoundingClientRect();
     if (cssX >= (iRect.left - rect.left) && cssX <= (iRect.right - rect.left) &&
-        cssY >= (iRect.top - rect.top) && cssY <= (iRect.bottom - rect.top)) { foundItem = item; }
+        cssY >= (iRect.top - rect.top)   && cssY <= (iRect.bottom - rect.top)) {
+      foundItem = item;
+    }
   });
 
   if (foundItem) {
+    noTargetSince = null; // finger is over something — reset grace timer
     if (currentHoveredItem === foundItem) {
       if ((Date.now() - hoverStartTime) >= HOVER_DELAY) {
         handleSelection(foundItem);
         currentHoveredItem = null;
+        hoverStartTime = 0;
       } else if (foundItem.querySelector('.hover-ring')) {
+        // Show fill progress on the ring as finger holds
         foundItem.querySelector('.hover-ring').style.display = 'block';
       }
     } else {
@@ -1030,12 +1447,22 @@ function processUniversalAirHover(normX, normY) {
       hoverStartTime = Date.now();
     }
   } else {
-    clearHoverRings();
-    currentHoveredItem = null;
+    // Finger is in empty space — give a grace window before resetting
+    if (noTargetSince === null) {
+      noTargetSince = Date.now();
+    } else if (Date.now() - noTargetSince > NO_TARGET_GRACE_MS) {
+      clearHoverRings();
+      currentHoveredItem = null;
+      noTargetSince = null;
+    }
+    // Don't immediately reset — let finger travel between toolbar and dropdown items
   }
 }
 
-function clearHoverRings() { document.querySelectorAll('.screen-swatch .hover-ring, .sticker-swatch .hover-ring, #stickerDropdownBtn .hover-ring, #paletteDropdownBtn .hover-ring, .palette-action-btn .hover-ring').forEach(r => r.style.display = 'none'); }
+function clearHoverRings() {
+  document.querySelectorAll('.hover-ring').forEach(r => r.style.display = 'none');
+  noTargetSince = null;
+}
 
 // ── SHARED AUDIO ENGINE (sprinkle sound + mode-switch chimes) ────────────────
 // Synthesized in-browser (no audio files needed).
