@@ -315,38 +315,43 @@
     .stage.fullscreen-mode .palette-action-btn { font-size: 0.82rem; padding: 10px 4px; }
     .stage.fullscreen-mode .size-preset-btn { font-size: 0.88rem; padding: 10px 4px; }
     .stage.fullscreen-mode #toolsMenu { width: 230px; padding: 14px; gap: 8px; }
-    .stage.fullscreen-mode #maximizeBtn { width: 52px; height: 52px; border-radius: 14px; font-size: 1.3rem; bottom: 16px; right: 16px; }
+    .stage.fullscreen-mode #brushMenu, #eraserMenu { width: 240px; padding: 14px; gap: 10px; }
     .stage.fullscreen-mode .palette-section-title { font-size: 0.7rem; }
+    .stage.fullscreen-mode #maximizeBtn { width: 52px; height: 52px; border-radius: 14px; }
 
-    /* Dropdowns scale up when fullscreen is active — applied on body so fixed containers
-       (which live outside .stage) also grow correctly */
-    body.stage-fullscreen #screenPalette {
-      width: 140px; gap: 10px; padding: 12px;
+    /* ───── VOICE COMMANDS ───── */
+    #micBtn.mic-listening {
+      background: rgba(46,204,113,0.22); border-color: var(--green); color: #b9ffd1;
+      animation: micPulse 1.4s ease-in-out infinite;
     }
-    body.stage-fullscreen .screen-swatch { width: 42px; height: 42px; }
-    body.stage-fullscreen .palette-section-title { font-size: 0.72rem; }
-    body.stage-fullscreen #stickerMenu {
-      width: 256px; gap: 10px; padding: 12px; grid-template-columns: repeat(4, 1fr);
+    #micBtn.mic-awaiting-confirm {
+      background: rgba(255,71,87,0.22); border-color: #ff4757; color: #ffd1d6;
+      animation: micPulse 0.8s ease-in-out infinite;
     }
-    body.stage-fullscreen .sticker-swatch { width: 52px; height: 52px; font-size: 1.8rem; }
-    body.stage-fullscreen #toolsMenu { width: 260px; padding: 16px; gap: 10px; }
-    body.stage-fullscreen .palette-action-btn { font-size: 0.9rem; padding: 13px 6px; min-height: 44px; }
-    body.stage-fullscreen #brushMenu, body.stage-fullscreen #eraserMenu {
-      width: 260px; padding: 16px; gap: 12px;
-    }
-    body.stage-fullscreen .size-preset-btn { font-size: 1rem; padding: 13px 4px; min-height: 44px; }
+    @keyframes micPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(46,204,113,0.35); } 50% { box-shadow: 0 0 0 8px rgba(46,204,113,0); } }
 
-    /* ───── MAXIMIZE / MINIMIZE BUTTON — bottom-right corner of canvas ───── */
+    #voiceStatus {
+      display: none; position: absolute; top: 56px; right: 10px; z-index: 32;
+      background: rgba(7,7,15,0.92); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.12); color: var(--text);
+      padding: 8px 14px; border-radius: 10px; font-size: 0.78rem; font-weight: 600;
+      max-width: 220px; box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    }
+    #voiceStatus.show { display: block; }
+    #voiceStatus.confirm { border-color: #ff4757; color: #ffd1d6; }
+
+    /* ───── MAXIMIZE / MINIMIZE BUTTON — floating, bottom-right of canvas ───── */
     #maximizeBtn {
-      position: absolute; bottom: 12px; right: 12px; z-index: 35;
-      background: rgba(7,7,15,0.75); backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.18);
-      color: var(--text); width: 40px; height: 40px; border-radius: 10px;
+      position: absolute; bottom: 14px; right: 14px; z-index: 36;
+      background: rgba(7,7,15,0.88); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.14); color: var(--text);
+      width: 42px; height: 42px; border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
-      cursor: pointer; font-size: 1.05rem; flex-shrink: 0;
+      cursor: pointer; font-size: 1.1rem;
       transition: background 0.15s, border-color 0.15s, transform 0.15s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     }
-    #maximizeBtn:hover { background: rgba(162,89,255,0.35); border-color: var(--purple); transform: scale(1.08); }
+    #maximizeBtn:hover { background: rgba(162,89,255,0.25); border-color: var(--purple); transform: scale(1.08); }
     #maximizeBtn:active { transform: scale(0.95); }
 
     /* ───── FULLSCREEN STAGE MODE ───── */
@@ -491,11 +496,17 @@
 
     <div class="toolbar-divider"></div>
 
+    <!-- Voice commands -->
+    <button class="toolbar-icon-btn" id="micBtn" title="Voice commands (undo / redo / clear)">🎙️<span class="hover-ring"></span></button>
   </div>
 
-  <div id="miniBanner">drawing minimised — write freely!</div>
-  <!-- Maximize / Minimize — fixed bottom-right corner of the canvas -->
+  <!-- Voice status pill — shows what was heard / what's awaited -->
+  <div id="voiceStatus"></div>
+
+  <!-- Maximize / Minimize — floating, bottom-right corner of the canvas -->
   <button id="maximizeBtn" title="Maximize canvas">⛶</button>
+
+  <div id="miniBanner">drawing minimised — write freely!</div>
   <div id="cameraOverlay">
     <p>Allow camera access to begin</p>
   </div>
@@ -637,13 +648,23 @@
   </div>
   <div class="help-section">
     <h4>Modes & extras</h4>
-    <div class="help-row"><span class="help-emoji">🛠️</span><span>Tools (bottom-left of the camera view) — blackboard, fill mode, symmetry, brush/eraser size, and clear all, all pointable with your finger</span></div>
+    <div class="help-row"><span class="help-emoji">🛠️</span><span>Tools — blackboard, fill mode, and symmetry, all pointable with your finger</span></div>
+    <div class="help-row"><span class="help-emoji">🖌️</span><span>Brush — set brush size (S/M/L/XL)</span></div>
+    <div class="help-row"><span class="help-emoji">⌫</span><span>Eraser — turn eraser on/off and set its size</span></div>
     <div class="help-row"><span class="help-emoji">🪣</span><span>Fill mode — picking a color floods the whole canvas instead of just the brush</span></div>
     <div class="help-row"><span class="help-emoji">🖍️</span><span>Blackboard — chalk now matches whatever color you've picked</span></div>
     <div class="help-row"><span class="help-emoji">🪞</span><span>Symmetry — mirrors every stroke into a mandala pattern</span></div>
     <div class="help-row"><span class="help-emoji">🎬</span><span>Timelapse — turns your drawing session into a downloadable GIF</span></div>
   </div>
+  <div class="help-section">
+    <h4>Voice commands</h4>
+    <div class="help-row"><span class="help-emoji">🎙️</span><span>Tap the mic icon in the toolbar to start listening (Chrome only)</span></div>
+    <div class="help-row"><span class="help-emoji">↩️</span><span>Say "undo" to undo your last stroke</span></div>
+    <div class="help-row"><span class="help-emoji">↪️</span><span>Say "redo" to redo it</span></div>
+    <div class="help-row"><span class="help-emoji">🗑️</span><span>Say "clear", then "confirm clear" to wipe the canvas — the extra step stops accidental wipes</span></div>
+  </div>
 </div>
+
 
 <script>
 // ── DOM ELEMENTS ──────────────────────────────────────────────────────────────
@@ -693,6 +714,20 @@ function flushCoordinates() {
   lastY = null;
 }
 
+// Closes whichever dropdown menu (Tools / Brush / Eraser) a control lives in,
+// right after that control's action runs — so picking a size or flipping a
+// toggle hands control straight back to drawing instead of leaving the panel
+// sitting open over the canvas.
+function closeMenuOf(el) {
+  const menu = el.closest('#toolsMenu, #brushMenu, #eraserMenu');
+  if (!menu) return;
+  menu.classList.remove('show');
+  const container = menu.parentElement;
+  if (container && container.id && container.id.endsWith('Container')) {
+    container.classList.remove('show');
+  }
+}
+
 blackboardBtn.addEventListener('click', (e) => {
   e.stopPropagation();
   flushCoordinates();
@@ -709,6 +744,7 @@ blackboardBtn.addEventListener('click', (e) => {
     label.textContent = "▤ blackboard off";
     chimeToggleOff();
   }
+  closeMenuOf(blackboardBtn);
 });
 
 helpToggleBtn.addEventListener('click', () => {
@@ -729,6 +765,7 @@ fillModeBtn.addEventListener('click', (e) => {
     label.textContent = "🪣 fill mode off";
     chimeToggleOff();
   }
+  closeMenuOf(fillModeBtn);
 });
 
 // Eraser toggle inside size panel
@@ -752,6 +789,7 @@ document.getElementById('eraserToggleBtn').addEventListener('click', (e) => {
   updateEraserToggleBtn();
   flushCoordinates();
   isEraserMode ? chimeToggleOn() : chimeToggleOff();
+  closeMenuOf(e.currentTarget);
 });
 
 // ── SYMMETRY / MANDALA MODE ────────────────────────────────────────────────────
@@ -776,6 +814,7 @@ symmetryToggleBtn.addEventListener('click', (e) => {
     label.textContent = "🪞 symmetry off";
     chimeToggleOff();
   }
+  closeMenuOf(symmetryToggleBtn);
 });
 
 // Rotates a point around a center by a given angle (radians).
@@ -826,6 +865,14 @@ function setColorSelectionMode(on) {
   screenPaletteEl.classList.toggle('selecting', on);
   appStage.classList.toggle('color-select-active', on);
   screenPaletteEl.classList.toggle('show', on); // auto open/close the Colours dropdown
+  const paletteContainerEl = document.getElementById('paletteContainer');
+  if (on) {
+    // Position it correctly right away — otherwise it sits at its default
+    // top:0/left:0 spot until the user happens to hover the toolbar button.
+    anchorDropdownBelow(toolbarPaletteBtn, paletteContainerEl);
+  } else {
+    paletteContainerEl.classList.remove('show');
+  }
 }
 
 let currentHoveredItem = null;
@@ -844,107 +891,124 @@ function triggerSuccessPulse() {
   });
 }
 
-stickerDropdownBtn.addEventListener('click', (e) => { e.stopPropagation(); });
-paletteDropdownBtn.addEventListener('click', (e) => { e.stopPropagation(); });
-toolsDropdownBtn.addEventListener('click', (e) => { e.stopPropagation(); });
+stickerDropdownBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  stickerMenu.classList.toggle('show');
+});
+paletteDropdownBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  screenPaletteEl.classList.toggle('show');
+});
+toolsDropdownBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  toolsMenu.classList.toggle('show');
+});
+
+// Only close dropdowns when clicking truly outside ALL interactive areas on the stage.
+// We must NOT close them during gesture interactions — the gesture system manages its own state.
+document.addEventListener('click', (e) => {
+  const inToolbar    = e.target.closest('#topToolbar');
+  const inPalette    = e.target.closest('#paletteContainer');
+  const inSticker    = e.target.closest('#stickerContainer');
+  const inTools      = e.target.closest('#toolsContainer');
+  const inBrush      = e.target.closest('#brushContainer');
+  const inEraser     = e.target.closest('#eraserContainer');
+  if (!inToolbar && !inPalette && !inSticker && !inTools && !inBrush && !inEraser) {
+    stickerMenu.classList.remove('show');
+    screenPaletteEl.classList.remove('show');
+    toolsMenu.classList.remove('show');
+    brushMenu.classList.remove('show'); eraserMenu.classList.remove('show');
+    // Also remove show from containers (for pointer-events)
+    document.getElementById('paletteContainer').classList.remove('show');
+    document.getElementById('stickerContainer').classList.remove('show');
+    document.getElementById('toolsContainer').classList.remove('show');
+    document.getElementById('brushContainer').classList.remove('show');
+    document.getElementById('eraserContainer').classList.remove('show');
+  }
+});
 
 // ── TOOLBAR BUTTON WIRING ─────────────────────────────────────────────────────
 const toolbarPaletteBtn = document.getElementById('toolbarPaletteBtn');
 const toolbarStickerBtn = document.getElementById('toolbarStickerBtn');
 const toolbarToolsBtn   = document.getElementById('toolbarToolsBtn');
-const toolbarBrushBtn   = document.getElementById('toolbarBrushBtn');
-const toolbarEraserBtn  = document.getElementById('toolbarEraserBtn');
+const toolbarBrushBtn=document.getElementById('toolbarBrushBtn');
+const toolbarEraserBtn=document.getElementById('toolbarEraserBtn');
 const paletteContainer  = document.getElementById('paletteContainer');
 const stickerContainer  = document.getElementById('stickerContainer');
 const toolsContainer    = document.getElementById('toolsContainer');
-const brushContainer    = document.getElementById('brushContainer');
-const eraserContainer   = document.getElementById('eraserContainer');
-const brushMenu         = document.getElementById('brushMenu');
-const eraserMenu        = document.getElementById('eraserMenu');
-
-// ─────────────────────────────────────────────────────────────────────────────
-// DROPDOWN SYSTEM — human-friendly, no flicker
-//
-// ROOT CAUSE of the flicker: every toolbar button had two listeners fighting
-// each other — the button's own click toggled open, then the document-level
-// click handler fired in the same event cycle and toggled it closed again.
-// On touch screens this is worse because pointerdown + pointerup + click all
-// fire in rapid succession, potentially toggling the same dropdown 2-3 times.
-//
-// THE FIX: one central manager, zero toggle logic, zero document-level listener.
-//   • Each toolbar button listens to 'pointerdown' (fires first, before click).
-//   • pointerdown records WHICH dropdown should open and calls openDropdown().
-//   • openDropdown() closes everything else, then opens the target.
-//   • If you tap the SAME button while its dropdown is already open, it closes it.
-//   • Clicking INSIDE an open dropdown is safe — nothing closes it.
-//   • Clicking OUTSIDE is caught by a single pointerdown on document, but we
-//     mark each toolbar-button pointerdown so the document handler ignores it.
-// ─────────────────────────────────────────────────────────────────────────────
-
-let _activeDropdown = null;   // currently open menu element, or null
-let _ignoreDocumentPointer = false;  // set true when a toolbar btn is pressed
+const brushContainer=document.getElementById('brushContainer'); const eraserContainer=document.getElementById('eraserContainer');
+const brushMenu=document.getElementById('brushMenu'); const eraserMenu=document.getElementById('eraserMenu');
 
 // Anchor a dropdown panel BELOW its toolbar trigger button using fixed viewport coords.
+// Containers are outside the stage (position:fixed on body), so no overflow:hidden clipping.
 function anchorDropdownBelow(triggerBtn, containerEl) {
-  const r = triggerBtn.getBoundingClientRect();
-  const panelWidth = containerEl.firstElementChild
-    ? (containerEl.firstElementChild.offsetWidth || 200) : 200;
+  const triggerRect = triggerBtn.getBoundingClientRect();
+  // Left-align with button, clamped so panel doesn't fall off the right edge
+  const panelWidth  = containerEl.firstElementChild ? containerEl.firstElementChild.offsetWidth || 200 : 200;
   const maxLeft = window.innerWidth - panelWidth - 8;
-  containerEl.style.left = Math.max(4, Math.min(r.left, maxLeft)) + 'px';
-  containerEl.style.top  = (r.bottom + 6) + 'px';
+  containerEl.style.left = Math.max(4, Math.min(triggerRect.left, maxLeft)) + 'px';
+  // Always open BELOW the trigger button
+  containerEl.style.top  = (triggerRect.bottom + 6) + 'px';
   containerEl.classList.add('show');
 }
 
-function closeAllDropdowns() {
-  [screenPaletteEl, stickerMenu, toolsMenu, brushMenu, eraserMenu].forEach(m => m.classList.remove('show'));
-  [paletteContainer, stickerContainer, toolsContainer, brushContainer, eraserContainer].forEach(c => c.classList.remove('show'));
-  _activeDropdown = null;
-}
+toolbarPaletteBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const opening = !screenPaletteEl.classList.contains('show');
+  stickerMenu.classList.remove('show'); document.getElementById('stickerContainer').classList.remove('show');
+  toolsMenu.classList.remove('show'); document.getElementById('toolsContainer').classList.remove('show');
+  brushMenu.classList.remove('show'); document.getElementById('brushContainer').classList.remove('show');
+  eraserMenu.classList.remove('show'); document.getElementById('eraserContainer').classList.remove('show');
+  screenPaletteEl.classList.toggle('show', opening);
+  if (opening) anchorDropdownBelow(toolbarPaletteBtn, document.getElementById('paletteContainer'));
+  else document.getElementById('paletteContainer').classList.remove('show');
+});
 
-function openDropdown(menuEl, triggerBtn, containerEl) {
-  // If this dropdown is already open → close it (acts as a toggle), done.
-  if (_activeDropdown === menuEl) {
-    closeAllDropdowns();
-    return;
-  }
-  // Close whatever is open, then open the requested one.
-  closeAllDropdowns();
-  menuEl.classList.add('show');
-  anchorDropdownBelow(triggerBtn, containerEl);
-  _activeDropdown = menuEl;
-}
+toolbarStickerBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const opening = !stickerMenu.classList.contains('show');
+  screenPaletteEl.classList.remove('show'); document.getElementById('paletteContainer').classList.remove('show');
+  toolsMenu.classList.remove('show'); document.getElementById('toolsContainer').classList.remove('show');
+  brushMenu.classList.remove('show'); document.getElementById('brushContainer').classList.remove('show');
+  eraserMenu.classList.remove('show'); document.getElementById('eraserContainer').classList.remove('show');
+  stickerMenu.classList.toggle('show', opening);
+  if (opening) anchorDropdownBelow(toolbarStickerBtn, document.getElementById('stickerContainer'));
+  else document.getElementById('stickerContainer').classList.remove('show');
+});
 
-// Each toolbar button uses pointerdown so we intercept before any click fires.
-function wireDropdownBtn(triggerBtn, menuEl, containerEl) {
-  triggerBtn.addEventListener('pointerdown', (e) => {
-    e.preventDefault();          // stops the subsequent 'click' from firing at all
-    e.stopPropagation();
-    _ignoreDocumentPointer = true;
-    openDropdown(menuEl, triggerBtn, containerEl);
-  });
-}
+toolbarToolsBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const opening = !toolsMenu.classList.contains('show');
+  screenPaletteEl.classList.remove('show'); document.getElementById('paletteContainer').classList.remove('show');
+  stickerMenu.classList.remove('show'); document.getElementById('stickerContainer').classList.remove('show');
+  brushMenu.classList.remove('show'); document.getElementById('brushContainer').classList.remove('show');
+  eraserMenu.classList.remove('show'); document.getElementById('eraserContainer').classList.remove('show');
+  toolsMenu.classList.toggle('show', opening);
+  if (opening) anchorDropdownBelow(toolbarToolsBtn, document.getElementById('toolsContainer'));
+  else document.getElementById('toolsContainer').classList.remove('show');
+});
 
-wireDropdownBtn(toolbarPaletteBtn, screenPaletteEl, paletteContainer);
-wireDropdownBtn(toolbarStickerBtn, stickerMenu,     stickerContainer);
-wireDropdownBtn(toolbarToolsBtn,   toolsMenu,       toolsContainer);
-wireDropdownBtn(toolbarBrushBtn,   brushMenu,       brushContainer);
-wireDropdownBtn(toolbarEraserBtn,  eraserMenu,      eraserContainer);
-
-// Close dropdowns when the user taps anywhere outside the toolbar or open panel.
-document.addEventListener('pointerdown', (e) => {
-  // If a toolbar button just set this flag, ignore — that button handles itself.
-  if (_ignoreDocumentPointer) { _ignoreDocumentPointer = false; return; }
-  if (!_activeDropdown) return;  // nothing open, nothing to do
-
-  const inToolbar = e.target.closest('#topToolbar');
-  const inPalette = e.target.closest('#paletteContainer');
-  const inSticker = e.target.closest('#stickerContainer');
-  const inTools   = e.target.closest('#toolsContainer');
-  const inBrush   = e.target.closest('#brushContainer');
-  const inEraser  = e.target.closest('#eraserContainer');
-  if (!inToolbar && !inPalette && !inSticker && !inTools && !inBrush && !inEraser) {
-    closeAllDropdowns();
-  }
+toolbarBrushBtn.addEventListener('click',(e)=>{
+  e.stopPropagation();
+  const opening=!brushMenu.classList.contains('show');
+  screenPaletteEl.classList.remove('show'); document.getElementById('paletteContainer').classList.remove('show');
+  stickerMenu.classList.remove('show'); document.getElementById('stickerContainer').classList.remove('show');
+  toolsMenu.classList.remove('show'); document.getElementById('toolsContainer').classList.remove('show');
+  eraserMenu.classList.remove('show'); document.getElementById('eraserContainer').classList.remove('show');
+  brushMenu.classList.toggle('show',opening);
+  if(opening) anchorDropdownBelow(toolbarBrushBtn,document.getElementById('brushContainer'));
+  else document.getElementById('brushContainer').classList.remove('show');
+});
+toolbarEraserBtn.addEventListener('click',(e)=>{
+  e.stopPropagation();
+  const opening=!eraserMenu.classList.contains('show');
+  screenPaletteEl.classList.remove('show'); document.getElementById('paletteContainer').classList.remove('show');
+  stickerMenu.classList.remove('show'); document.getElementById('stickerContainer').classList.remove('show');
+  toolsMenu.classList.remove('show'); document.getElementById('toolsContainer').classList.remove('show');
+  brushMenu.classList.remove('show'); document.getElementById('brushContainer').classList.remove('show');
+  eraserMenu.classList.toggle('show',opening);
+  if(opening) anchorDropdownBelow(toolbarEraserBtn,document.getElementById('eraserContainer'));
+  else document.getElementById('eraserContainer').classList.remove('show');
 });
 
 // ── MAXIMIZE / MINIMIZE ───────────────────────────────────────────────────────
@@ -1016,12 +1080,54 @@ function clearAllSelections() {
 }
 
 function handleSelection(element) {
-  // ── Toolbar dropdown triggers — delegate to the central openDropdown manager ──
-  if (element.id === 'toolbarPaletteBtn') { openDropdown(screenPaletteEl, element, paletteContainer); return; }
-  if (element.id === 'toolbarStickerBtn') { openDropdown(stickerMenu,     element, stickerContainer); return; }
-  if (element.id === 'toolbarToolsBtn')   { openDropdown(toolsMenu,       element, toolsContainer);   return; }
-  if (element.id === 'toolbarBrushBtn')   { openDropdown(brushMenu,       element, brushContainer);   return; }
-  if (element.id === 'toolbarEraserBtn')  { openDropdown(eraserMenu,      element, eraserContainer);  return; }
+  // ── Toolbar dropdown triggers ──
+  if (element.id === 'toolbarPaletteBtn') {
+    const opening = !screenPaletteEl.classList.contains('show');
+    stickerMenu.classList.remove('show');
+    toolsMenu.classList.remove('show');
+    brushMenu.classList.remove('show'); eraserMenu.classList.remove('show');
+    screenPaletteEl.classList.toggle('show', opening);
+    if (opening) anchorDropdownBelow(element, paletteContainer);
+    return;
+  }
+  if (element.id === 'toolbarStickerBtn') {
+    const opening = !stickerMenu.classList.contains('show');
+    screenPaletteEl.classList.remove('show');
+    toolsMenu.classList.remove('show');
+    brushMenu.classList.remove('show'); eraserMenu.classList.remove('show');
+    stickerMenu.classList.toggle('show', opening);
+    if (opening) anchorDropdownBelow(element, stickerContainer);
+    return;
+  }
+  if (element.id === 'toolbarToolsBtn') {
+    const opening = !toolsMenu.classList.contains('show');
+    screenPaletteEl.classList.remove('show');
+    stickerMenu.classList.remove('show');
+    brushMenu.classList.remove('show'); eraserMenu.classList.remove('show');
+    toolsMenu.classList.toggle('show', opening);
+    if (opening) anchorDropdownBelow(element, toolsContainer);
+    return;
+  }
+  if (element.id === 'toolbarBrushBtn') {
+    const opening = !brushMenu.classList.contains('show');
+    screenPaletteEl.classList.remove('show');
+    stickerMenu.classList.remove('show');
+    toolsMenu.classList.remove('show');
+    eraserMenu.classList.remove('show');
+    brushMenu.classList.toggle('show', opening);
+    if (opening) anchorDropdownBelow(element, brushContainer);
+    return;
+  }
+  if (element.id === 'toolbarEraserBtn') {
+    const opening = !eraserMenu.classList.contains('show');
+    screenPaletteEl.classList.remove('show');
+    stickerMenu.classList.remove('show');
+    toolsMenu.classList.remove('show');
+    brushMenu.classList.remove('show');
+    eraserMenu.classList.toggle('show', opening);
+    if (opening) anchorDropdownBelow(element, eraserContainer);
+    return;
+  }
   // ── Direct action buttons (undo / redo / clear) ──
   if (element.id === 'undoBtn') {
     flushCoordinates();
@@ -1049,9 +1155,9 @@ function handleSelection(element) {
     return;
   }
   // ── Old hidden dropdown buttons ──
-  if (element === stickerDropdownBtn) { openDropdown(stickerMenu, stickerDropdownBtn, stickerContainer); return; }
-  if (element === paletteDropdownBtn) { openDropdown(screenPaletteEl, paletteDropdownBtn, paletteContainer); return; }
-  if (element === toolsDropdownBtn)   { openDropdown(toolsMenu, toolsDropdownBtn, toolsContainer); return; }
+  if (element === stickerDropdownBtn) { stickerMenu.classList.toggle('show'); return; }
+  if (element === paletteDropdownBtn) { screenPaletteEl.classList.toggle('show'); return; }
+  if (element === toolsDropdownBtn)   { toolsMenu.classList.toggle('show'); return; }
   // ── Toggle/size buttons inside menus ──
   if (element.classList.contains('palette-action-btn') || element.classList.contains('size-preset-btn')) {
     element.click();
@@ -1070,6 +1176,7 @@ function handleSelection(element) {
     activeSticker = element.dataset.emoji;
     activeStickerView.textContent = activeSticker;
     stickerMenu.classList.remove('show');
+    document.getElementById('stickerContainer').classList.remove('show');
   } else {
     isEraserMode = false;
     activeSticker = null;
@@ -1111,6 +1218,7 @@ document.querySelectorAll('.size-preset-btn').forEach(btn => {
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
     applySizePreset(btn);
+    closeMenuOf(btn);
   });
 });
 
@@ -1411,6 +1519,15 @@ function processUniversalAirHover(normX, normY) {
   const cssX = normX * rect.width;
   const cssY = normY * rect.height;
 
+  // Maps each toolbar dropdown trigger to the menu it opens.
+  const triggerMenuMap = {
+    toolbarPaletteBtn: screenPaletteEl,
+    toolbarStickerBtn: stickerMenu,
+    toolbarToolsBtn: toolsMenu,
+    toolbarBrushBtn: brushMenu,
+    toolbarEraserBtn: eraserMenu
+  };
+
   let foundItem = null;
   const targets = document.querySelectorAll(
     '.screen-swatch, .sticker-swatch, ' +
@@ -1423,6 +1540,12 @@ function processUniversalAirHover(normX, normY) {
     // Skip items inside hidden menus — they aren't actually visible
     const menu = item.closest('#screenPalette, #stickerMenu, #toolsMenu, #brushMenu, #eraserMenu');
     if (menu && !menu.classList.contains('show')) return;
+    // FIX: once a trigger's own menu is already open, stop counting the trigger
+    // itself as a hoverable target. Otherwise the finger sitting on the trigger
+    // keeps re-completing the dwell timer and toggles the menu open/closed in
+    // a loop — making it impossible to move down into the menu to pick anything.
+    const mappedMenu = triggerMenuMap[item.id];
+    if (mappedMenu && mappedMenu.classList.contains('show')) return;
     const iRect = item.getBoundingClientRect();
     if (cssX >= (iRect.left - rect.left) && cssX <= (iRect.right - rect.left) &&
         cssY >= (iRect.top - rect.top)   && cssY <= (iRect.bottom - rect.top)) {
@@ -1763,6 +1886,159 @@ document.getElementById('whatsappBtn').addEventListener('click', () => {
   window.open(`https://api.whatsapp.com/send?text=${textMsg}`, '_blank');
   burstConfetti();
 });
+
+// ── VOICE COMMANDS ────────────────────────────────────────────────────────────
+// Supported: "undo", "redo", "clear" (asks for "confirm clear" before wiping
+// the canvas, so a stray word in the background can't accidentally erase work).
+const micBtn = document.getElementById('micBtn');
+const voiceStatusEl = document.getElementById('voiceStatus');
+
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let voiceListening = false;
+let awaitingClearConfirm = false;
+let clearConfirmTimeout = null;
+const CLEAR_CONFIRM_WINDOW_MS = 6000; // how long "confirm clear" stays armed
+
+function showVoiceStatus(text, isConfirm) {
+  voiceStatusEl.textContent = text;
+  voiceStatusEl.classList.add('show');
+  voiceStatusEl.classList.toggle('confirm', !!isConfirm);
+}
+function hideVoiceStatus() {
+  voiceStatusEl.classList.remove('show');
+  voiceStatusEl.classList.remove('confirm');
+}
+
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  try {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 1.05; u.pitch = 1.0; u.volume = 0.9;
+    window.speechSynthesis.speak(u);
+  } catch (e) { /* speech synthesis unsupported — silently skip */ }
+}
+
+function armClearConfirm() {
+  awaitingClearConfirm = true;
+  micBtn.classList.add('mic-awaiting-confirm');
+  showVoiceStatus('Say "confirm clear" to wipe the canvas', true);
+  speak('Say confirm clear');
+  clearTimeout(clearConfirmTimeout);
+  clearConfirmTimeout = setTimeout(() => {
+    if (awaitingClearConfirm) {
+      disarmClearConfirm();
+      showVoiceStatus('Clear cancelled (timed out)', false);
+      setTimeout(() => { if (voiceListening) showVoiceStatus('Listening… say "undo", "redo" or "clear"', false); else hideVoiceStatus(); }, 1800);
+    }
+  }, CLEAR_CONFIRM_WINDOW_MS);
+}
+function disarmClearConfirm() {
+  awaitingClearConfirm = false;
+  micBtn.classList.remove('mic-awaiting-confirm');
+  clearTimeout(clearConfirmTimeout);
+}
+
+function performVoiceUndo() {
+  flushCoordinates();
+  if (!undoStack.length) { showVoiceStatus('Nothing to undo', false); return; }
+  redoStack.push(ctx.getImageData(0,0,canvas.width,canvas.height));
+  ctx.putImageData(undoStack.pop(), 0, 0);
+  triggerSuccessPulse();
+  showVoiceStatus('↩ Undid last stroke', false);
+}
+function performVoiceRedo() {
+  flushCoordinates();
+  if (!redoStack.length) { showVoiceStatus('Nothing to redo', false); return; }
+  undoStack.push(ctx.getImageData(0,0,canvas.width,canvas.height));
+  ctx.putImageData(redoStack.pop(), 0, 0);
+  triggerSuccessPulse();
+  showVoiceStatus('↪ Redid stroke', false);
+}
+function performVoiceClear() {
+  saveSnap();
+  flushCoordinates();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  gCtx.clearRect(0,0,glitterCvs.width,glitterCvs.height);
+  captureTimelapseFrame();
+  triggerSuccessPulse();
+  disarmClearConfirm();
+  showVoiceStatus('🗑️ Canvas cleared', false);
+  speak('Canvas cleared');
+}
+
+// Normalizes a heard phrase: lowercase, strip punctuation, collapse whitespace.
+function normalizePhrase(s) {
+  return s.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+function handleVoicePhrase(rawPhrase) {
+  const phrase = normalizePhrase(rawPhrase);
+  if (!phrase) return;
+
+  // "confirm clear" must be matched first/explicitly, and only counts while armed.
+  if (awaitingClearConfirm && (phrase.includes('confirm clear') || phrase === 'confirm')) {
+    performVoiceClear();
+    return;
+  }
+  // Any other phrase while armed cancels the pending clear, for safety.
+  if (awaitingClearConfirm) {
+    disarmClearConfirm();
+    showVoiceStatus('Clear cancelled', false);
+    setTimeout(() => { if (voiceListening) showVoiceStatus('Listening… say "undo", "redo" or "clear"', false); }, 1500);
+    // fall through so the new phrase can still be acted on below
+  }
+
+  if (phrase.includes('undo')) { performVoiceUndo(); return; }
+  if (phrase.includes('redo')) { performVoiceRedo(); return; }
+  if (phrase.includes('clear')) { armClearConfirm(); return; }
+  // Unrecognized phrase — ignore silently, keep listening.
+}
+
+function initSpeechRecognition() {
+  if (!SpeechRecognitionAPI) return null;
+  const r = new SpeechRecognitionAPI();
+  r.continuous = true;
+  r.interimResults = false;
+  r.lang = 'en-US';
+
+  r.onresult = (event) => {
+    const last = event.results[event.results.length - 1];
+    if (last && last[0]) handleVoicePhrase(last[0].transcript);
+  };
+  r.onerror = (event) => {
+    if (event.error === 'no-speech' || event.error === 'aborted') return; // benign, keep going
+    showVoiceStatus('Mic error: ' + event.error, false);
+  };
+  r.onend = () => {
+    // Browsers auto-stop recognition periodically — restart while toggled on.
+    if (voiceListening) { try { r.start(); } catch (e) {} }
+  };
+  return r;
+}
+
+micBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (!SpeechRecognitionAPI) {
+    showVoiceStatus('Voice commands need Chrome (Web Speech API not supported here)', false);
+    setTimeout(hideVoiceStatus, 3000);
+    return;
+  }
+  voiceListening = !voiceListening;
+  if (voiceListening) {
+    if (!recognition) recognition = initSpeechRecognition();
+    try { recognition.start(); } catch (e) {}
+    micBtn.classList.add('mic-listening');
+    showVoiceStatus('Listening… say "undo", "redo" or "clear"', false);
+  } else {
+    disarmClearConfirm();
+    if (recognition) { try { recognition.stop(); } catch (e) {} }
+    micBtn.classList.remove('mic-listening');
+    hideVoiceStatus();
+  }
+});
+
 </script>
 </body>
 </html>
